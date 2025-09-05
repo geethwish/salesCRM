@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   AuthState,
   AuthAction,
@@ -12,6 +13,8 @@ import {
   UseAuthReturn
 } from '@/lib/types/auth';
 import { ApiResponse } from '@/lib/types/order';
+import { authApi } from '@/lib/utils/httpClient';
+import { authToasts } from '@/lib/components/ui/Toast';
 
 // Initial state
 const initialState: AuthState = {
@@ -90,46 +93,40 @@ interface AuthProviderProps {
 // Auth provider component
 export function AuthProvider({ children }: AuthProviderProps) {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const router = useRouter();
+  const pathname = usePathname();
 
   // Check for existing authentication on mount
   useEffect(() => {
     checkAuthStatus();
   }, []);
 
+  // Route protection is now handled at the root level (app/page.tsx)
+  // Individual pages can still implement their own protection if needed
+
   // Check authentication status
   const checkAuthStatus = async () => {
     try {
       dispatch({ type: 'AUTH_START' });
 
-      const response = await fetch('/api/auth/me', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await authApi.me();
 
-      if (response.ok) {
-        const data: ApiResponse<PublicUser> = await response.json();
-        if (data.success && data.data) {
-          // Get token from cookie or localStorage
-          const token = getStoredToken();
-          dispatch({
-            type: 'AUTH_SUCCESS',
-            payload: {
-              user: data.data,
-              token: token || ''
-            }
-          });
-        } else {
-          dispatch({ type: 'AUTH_LOGOUT' });
-        }
+      if (response.data.success && response.data.data) {
+        const token = getStoredToken();
+        dispatch({
+          type: 'AUTH_SUCCESS',
+          payload: {
+            user: response.data.data,
+            token: token || ''
+          }
+        });
       } else {
         dispatch({ type: 'AUTH_LOGOUT' });
       }
     } catch (error) {
       console.error('Auth check error:', error);
       dispatch({ type: 'AUTH_LOGOUT' });
+      removeToken();
     }
   };
 
@@ -160,32 +157,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       dispatch({ type: 'AUTH_START' });
 
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
+      const response = await authApi.login(credentials);
+      const data = response.data;
 
-      const data: ApiResponse = await response.json();
-
-      if (response.ok && data.success && data.data) {
+      if (data.success && data.data) {
         const { user, token } = data.data;
         storeToken(token);
         dispatch({
           type: 'AUTH_SUCCESS',
           payload: { user, token }
         });
+
+        // Show success toast
+        authToasts.loginSuccess(user.name);
+
+        // Redirect to dashboard
+        router.push('/dashboard');
       } else {
         const errorMessage = data.error?.message || 'Login failed';
         dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
+        authToasts.loginError(errorMessage);
         throw new Error(errorMessage);
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Login failed';
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error?.message || error.message || 'Login failed';
       dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
+      authToasts.loginError(errorMessage);
       throw error;
     }
   };
@@ -195,32 +192,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       dispatch({ type: 'AUTH_START' });
 
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
+      const response = await authApi.register(userData);
+      const data = response.data;
 
-      const data: ApiResponse = await response.json();
-
-      if (response.ok && data.success && data.data) {
+      if (data.success && data.data) {
         const { user, token } = data.data;
         storeToken(token);
         dispatch({
           type: 'AUTH_SUCCESS',
           payload: { user, token }
         });
+
+        // Show success toast
+        authToasts.registerSuccess(user.name);
+
+        // Redirect to dashboard
+        router.push('/dashboard');
       } else {
         const errorMessage = data.error?.message || 'Registration failed';
         dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
+        authToasts.registerError(errorMessage);
         throw new Error(errorMessage);
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error?.message || error.message || 'Registration failed';
       dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
+      authToasts.registerError(errorMessage);
       throw error;
     }
   };
@@ -228,18 +225,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Logout function
   const logout = async (): Promise<void> => {
     try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      await authApi.logout();
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
       removeToken();
       dispatch({ type: 'AUTH_LOGOUT' });
+      authToasts.logoutSuccess();
+      router.push('/');
     }
   };
 

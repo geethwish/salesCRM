@@ -1,8 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { LoginForm } from './LoginForm';
 import { RegisterForm } from './RegisterForm';
+import { useAuth } from '@/lib/contexts/AuthContext';
+import { LoadingTransition } from '@/lib/components/ui/PageTransition';
 
 type AuthMode = 'login' | 'register';
 
@@ -14,13 +17,48 @@ interface AuthLayoutProps {
 
 export function AuthLayout({
   initialMode = 'login',
-  redirectTo = '/',
+  redirectTo = '/dashboard',
   className = ''
 }: AuthLayoutProps) {
   const [mode, setMode] = useState<AuthMode>(initialMode);
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.replace(redirectTo);
+    }
+  }, [isAuthenticated, isLoading, router, redirectTo]);
 
   const switchToLogin = () => setMode('login');
   const switchToRegister = () => setMode('register');
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <LoadingTransition
+          isLoading={true}
+          loadingComponent={
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
+              <p className="text-gray-600 dark:text-gray-300 text-sm">
+                Loading...
+              </p>
+            </div>
+          }
+        >
+          <div></div>
+        </LoadingTransition>
+      </div>
+    );
+  }
+
+  // Don't render auth forms if user is authenticated (redirect will happen)
+  if (isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 ${className}`}>
