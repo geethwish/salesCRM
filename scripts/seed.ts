@@ -1,6 +1,13 @@
 #!/usr/bin/env tsx
 
-import { orderService } from "@/lib/services/orderService";
+// Load environment variables from .env.local FIRST
+import { config } from "dotenv";
+import { resolve } from "path";
+
+// Load .env.local file before importing any modules that use env vars
+config({ path: resolve(process.cwd(), ".env.local") });
+
+// Now import modules that depend on environment variables
 import { OrderCategory, OrderSource } from "@/lib/types/order";
 
 /**
@@ -238,18 +245,76 @@ const sampleOrders = [
  * Seed the database with sample orders
  */
 async function seedDatabase() {
+  let mongoServer: import("mongodb-memory-server").MongoMemoryServer | null =
+    null;
+
   try {
     console.log("🌱 Starting database seeding...");
 
-    // Clear existing data
-    await orderService.clearAllOrders();
-    console.log("🗑️  Cleared existing orders");
+    // Import required modules after env vars are loaded
+    const { MongoMemoryServer } = await import("mongodb-memory-server");
+    const { connectToDatabase } = await import("@/lib/database/connection");
+    const { orderService } = await import("@/lib/services/orderService");
+    const UserModel = (await import("@/lib/models/User")).default;
+    const OrderModel = (await import("@/lib/models/Order")).default;
 
-    // Create sample orders
+    // Check if we should use MongoDB Memory Server or real MongoDB
+    const existingUri = process.env.MONGODB_URI;
+    const useMemoryServer =
+      !existingUri || existingUri.includes("localhost:27017");
+
+    if (useMemoryServer) {
+      // Start MongoDB Memory Server for development
+      console.log("🚀 Starting MongoDB Memory Server...");
+      mongoServer = await MongoMemoryServer.create({
+        instance: {
+          dbName: "sales-crm",
+          port: 27017,
+        },
+      });
+
+      const mongoUri = mongoServer.getUri();
+      console.log(`📡 MongoDB Memory Server started at: ${mongoUri}`);
+
+      // Override the MONGODB_URI environment variable
+      process.env.MONGODB_URI = mongoUri;
+    } else {
+      console.log(`📡 Using existing MongoDB connection: ${existingUri}`);
+    }
+
+    // Ensure database connection
+    await connectToDatabase();
+
+    // Clear existing data
+    console.log("🗑️  Clearing existing data...");
+    await OrderModel.deleteMany({});
+    await UserModel.deleteMany({});
+    console.log("🗑️  Cleared existing orders and users");
+
+    // Create superadmin account
+    console.log("👤 Creating superadmin account...");
+    const superadminData = {
+      email: "admin@crm.com",
+      password: "password", // Will be hashed by pre-save middleware
+      name: "Super Admin",
+      role: "admin" as const,
+      isActive: true,
+      emailVerified: true,
+    };
+
+    const superadmin = new UserModel(superadminData);
+    const savedSuperadmin = await superadmin.save();
+    console.log(`✅ Created superadmin account: ${savedSuperadmin.email}`);
+
+    // Create sample orders associated with superadmin
+    console.log("📦 Creating sample orders...");
     let createdCount = 0;
     for (const orderData of sampleOrders) {
       try {
-        await orderService.createOrder(orderData);
+        await orderService.createOrder(
+          orderData,
+          savedSuperadmin._id.toString()
+        );
         createdCount++;
       } catch (error) {
         console.error(
@@ -262,7 +327,9 @@ async function seedDatabase() {
     console.log(`✅ Successfully created ${createdCount} orders`);
 
     // Display statistics
-    const stats = await orderService.getOrderStats();
+    const stats = await orderService.getOrderStats(
+      savedSuperadmin._id.toString()
+    );
     console.log("\n📊 Database Statistics:");
     console.log(`Total Orders: ${stats.total}`);
     console.log(`Total Amount: $${stats.totalAmount.toFixed(2)}`);
@@ -286,10 +353,22 @@ async function seedDatabase() {
       console.log(`  ${location}: ${count}`);
     });
 
+    console.log(`\n👤 Superadmin Account:`);
+    console.log(`  Email: ${savedSuperadmin.email}`);
+    console.log(`  Password: password`);
+    console.log(`  Role: ${savedSuperadmin.role}`);
+
     console.log("\n🎉 Database seeding completed successfully!");
   } catch (error) {
     console.error("❌ Database seeding failed:", error);
     process.exit(1);
+  } finally {
+    // Clean up MongoDB Memory Server if it was started
+    if (mongoServer) {
+      console.log("🧹 Stopping MongoDB Memory Server...");
+      await mongoServer.stop();
+      console.log("✅ MongoDB Memory Server stopped");
+    }
   }
 }
 

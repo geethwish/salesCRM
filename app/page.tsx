@@ -2,17 +2,15 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/contexts/AuthContext';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { LoadingTransition } from '@/lib/components/ui/PageTransition';
 
 /**
- * Root page component that implements authentication-based routing
- *
- * Behavior:
- * - If user is NOT authenticated: Redirect to /auth/login
- * - If user IS authenticated: Redirect to /dashboard
- * - Shows loading state while determining authentication status
+ - If user is NOT authenticated: Redirect to /auth/login
+ - If user IS authenticated: Redirect to /dashboard
+ - Shows loading state while determining authentication status
  */
+
 export default function Home() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
@@ -30,8 +28,7 @@ export default function Home() {
     }
   }, [isAuthenticated, isLoading, router]);
 
-  // Show loading state while determining authentication status
-  // This prevents any flash of content before redirect
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
       <LoadingTransition
@@ -45,7 +42,6 @@ export default function Home() {
           </div>
         }
       >
-        {/* This content should never be shown as redirect happens immediately */}
         <div></div>
       </LoadingTransition>
     </div>

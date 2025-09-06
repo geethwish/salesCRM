@@ -3,8 +3,8 @@
 import React from 'react';
 import { Toaster, toast as hotToast, ToastOptions } from 'react-hot-toast';
 
-// Custom toast configuration with dark mode support
-const toastConfig: ToastOptions = {
+// Base toast configuration
+const baseToastConfig: ToastOptions = {
   duration: 4000,
   position: 'top-right',
   style: {
@@ -13,122 +13,153 @@ const toastConfig: ToastOptions = {
     fontWeight: '500',
     maxWidth: '400px',
   },
-  // Success toast styling
-  success: {
-    style: {
-      background: 'rgb(34, 197, 94)', // green-500
-      color: 'white',
-      border: '1px solid rgb(22, 163, 74)', // green-600
-    },
-    iconTheme: {
-      primary: 'white',
-      secondary: 'rgb(34, 197, 94)',
-    },
+};
+
+// Success toast styling
+const successToastConfig: ToastOptions = {
+  ...baseToastConfig,
+  style: {
+    ...baseToastConfig.style,
+    background: 'rgb(34, 197, 94)', // green-500
+    color: 'white',
+    border: '1px solid rgb(22, 163, 74)', // green-600
   },
-  // Error toast styling
-  error: {
-    style: {
-      background: 'rgb(239, 68, 68)', // red-500
-      color: 'white',
-      border: '1px solid rgb(220, 38, 38)', // red-600
-    },
-    iconTheme: {
-      primary: 'white',
-      secondary: 'rgb(239, 68, 68)',
-    },
-  },
-  // Loading toast styling
-  loading: {
-    style: {
-      background: 'rgb(59, 130, 246)', // blue-500
-      color: 'white',
-      border: '1px solid rgb(37, 99, 235)', // blue-600
-    },
-    iconTheme: {
-      primary: 'white',
-      secondary: 'rgb(59, 130, 246)',
-    },
+  iconTheme: {
+    primary: 'white',
+    secondary: 'rgb(34, 197, 94)',
   },
 };
 
-// Dark mode toast configuration
-const darkToastConfig: ToastOptions = {
-  ...toastConfig,
+// Error toast styling
+const errorToastConfig: ToastOptions = {
+  ...baseToastConfig,
   style: {
-    ...toastConfig.style,
+    ...baseToastConfig.style,
+    background: 'rgb(239, 68, 68)', // red-500
+    color: 'white',
+    border: '1px solid rgb(220, 38, 38)', // red-600
+  },
+  iconTheme: {
+    primary: 'white',
+    secondary: 'rgb(239, 68, 68)',
+  },
+};
+
+// Loading toast styling
+const loadingToastConfig: ToastOptions = {
+  ...baseToastConfig,
+  style: {
+    ...baseToastConfig.style,
+    background: 'rgb(59, 130, 246)', // blue-500
+    color: 'white',
+    border: '1px solid rgb(37, 99, 235)', // blue-600
+  },
+  iconTheme: {
+    primary: 'white',
+    secondary: 'rgb(59, 130, 246)',
+  },
+};
+
+// Dark mode base configuration
+const darkBaseToastConfig: ToastOptions = {
+  ...baseToastConfig,
+  style: {
+    ...baseToastConfig.style,
     background: 'rgb(31, 41, 55)', // gray-800
     color: 'rgb(243, 244, 246)', // gray-100
     border: '1px solid rgb(55, 65, 81)', // gray-700
   },
-  success: {
-    style: {
-      background: 'rgb(22, 163, 74)', // green-600 (darker for dark mode)
-      color: 'white',
-      border: '1px solid rgb(21, 128, 61)', // green-700
-    },
-    iconTheme: {
-      primary: 'white',
-      secondary: 'rgb(22, 163, 74)',
-    },
+};
+
+// Dark mode success toast styling
+const darkSuccessToastConfig: ToastOptions = {
+  ...darkBaseToastConfig,
+  style: {
+    ...darkBaseToastConfig.style,
+    background: 'rgb(22, 163, 74)', // green-600 (darker for dark mode)
+    color: 'white',
+    border: '1px solid rgb(21, 128, 61)', // green-700
   },
-  error: {
-    style: {
-      background: 'rgb(220, 38, 38)', // red-600 (darker for dark mode)
-      color: 'white',
-      border: '1px solid rgb(185, 28, 28)', // red-700
-    },
-    iconTheme: {
-      primary: 'white',
-      secondary: 'rgb(220, 38, 38)',
-    },
-  },
-  loading: {
-    style: {
-      background: 'rgb(37, 99, 235)', // blue-600 (darker for dark mode)
-      color: 'white',
-      border: '1px solid rgb(29, 78, 216)', // blue-700
-    },
-    iconTheme: {
-      primary: 'white',
-      secondary: 'rgb(37, 99, 235)',
-    },
+  iconTheme: {
+    primary: 'white',
+    secondary: 'rgb(22, 163, 74)',
   },
 };
 
-// Toast utility functions
+// Dark mode error toast styling
+const darkErrorToastConfig: ToastOptions = {
+  ...darkBaseToastConfig,
+  style: {
+    ...darkBaseToastConfig.style,
+    background: 'rgb(220, 38, 38)', // red-600 (darker for dark mode)
+    color: 'white',
+    border: '1px solid rgb(185, 28, 28)', // red-700
+  },
+  iconTheme: {
+    primary: 'white',
+    secondary: 'rgb(220, 38, 38)',
+  },
+};
+
+// Dark mode loading toast styling
+const darkLoadingToastConfig: ToastOptions = {
+  ...darkBaseToastConfig,
+  style: {
+    ...darkBaseToastConfig.style,
+    background: 'rgb(37, 99, 235)', // blue-600 (darker for dark mode)
+    color: 'white',
+    border: '1px solid rgb(29, 78, 216)', // blue-700
+  },
+  iconTheme: {
+    primary: 'white',
+    secondary: 'rgb(37, 99, 235)',
+  },
+};
+
+// Helper function to detect dark mode
+const isDarkMode = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+};
+
+// Toast utility functions with dynamic dark mode support
 export const toast = {
   success: (message: string, options?: ToastOptions) => {
+    const config = isDarkMode() ? darkSuccessToastConfig : successToastConfig;
     return hotToast.success(message, {
-      ...toastConfig.success,
+      ...config,
       ...options,
     });
   },
 
   error: (message: string, options?: ToastOptions) => {
+    const config = isDarkMode() ? darkErrorToastConfig : errorToastConfig;
     return hotToast.error(message, {
-      ...toastConfig.error,
+      ...config,
       ...options,
     });
   },
 
   loading: (message: string, options?: ToastOptions) => {
+    const config = isDarkMode() ? darkLoadingToastConfig : loadingToastConfig;
     return hotToast.loading(message, {
-      ...toastConfig.loading,
+      ...config,
       ...options,
     });
   },
 
-  promise: <T>(
+  promise: <T = unknown>(
     promise: Promise<T>,
     messages: {
       loading: string;
       success: string | ((data: T) => string);
-      error: string | ((error: any) => string);
+      error: string | ((error: unknown) => string);
     },
     options?: ToastOptions
   ) => {
+    const config = isDarkMode() ? darkBaseToastConfig : baseToastConfig;
     return hotToast.promise(promise, messages, {
-      ...toastConfig,
+      ...config,
       ...options,
     });
   },
@@ -142,8 +173,9 @@ export const toast = {
   },
 
   custom: (jsx: React.ReactElement, options?: ToastOptions) => {
+    const config = isDarkMode() ? darkBaseToastConfig : baseToastConfig;
     return hotToast.custom(jsx, {
-      ...toastConfig,
+      ...config,
       ...options,
     });
   },
@@ -228,7 +260,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
-  const currentConfig = isDarkMode ? darkToastConfig : toastConfig;
+  const currentConfig = isDarkMode ? darkBaseToastConfig : baseToastConfig;
 
   return (
     <>

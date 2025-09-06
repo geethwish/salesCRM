@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Provider } from 'react-redux';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ProtectedRoute, useAuth } from '@/lib/contexts/AuthContext';
-import { store, useAppDispatch, useAppSelector } from '@/lib/store';
+import { ProtectedRoute } from '@/lib/providers/ReduxProvider';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import {
   fetchOrders,
   fetchStats,
@@ -53,8 +53,6 @@ function DashboardContent() {
     dispatch(fetchOrders({
       page: pagination.page,
       limit: pagination.limit,
-      sortBy: filters.sortBy,
-      sortOrder: filters.sortOrder,
       ...filters
     }));
   }, [dispatch]);
@@ -65,8 +63,7 @@ function DashboardContent() {
     dispatch(fetchOrders({
       page: 1, // Reset to first page when filters change
       limit: pagination.limit,
-      sortBy: filters.sortBy,
-      sortOrder: filters.sortOrder,
+      ...filters,
       ...newFilters
     }));
   };
@@ -85,7 +82,7 @@ function DashboardContent() {
   // Handle sorting
   const handleSort = (sortKey: string) => {
     const newSortOrder = filters.sortBy === sortKey && filters.sortOrder === 'asc' ? 'desc' : 'asc';
-    const newFilters = { ...filters, sortBy: sortKey as any, sortOrder: newSortOrder };
+    const newFilters = { ...filters, sortBy: sortKey as 'date' | 'customer' | 'amount' | 'createdAt', sortOrder: newSortOrder as 'asc' | 'desc' };
 
     dispatch(setFilters(newFilters));
     dispatch(fetchOrders({
@@ -101,8 +98,6 @@ function DashboardContent() {
     dispatch(fetchOrders({
       page,
       limit: pagination.limit,
-      sortBy: filters.sortBy,
-      sortOrder: filters.sortOrder,
       ...filters
     }));
   };
@@ -116,8 +111,6 @@ function DashboardContent() {
         dispatch(fetchOrders({
           page: pagination.page,
           limit: pagination.limit,
-          sortBy: filters.sortBy,
-          sortOrder: filters.sortOrder,
           ...filters
         })).unwrap()
       ]);
@@ -293,13 +286,11 @@ function DashboardContent() {
 // Dashboard page with providers
 function DashboardPage() {
   return (
-    <Provider store={store}>
-      <QueryClientProvider client={queryClient}>
-        <ProtectedRoute>
-          <DashboardContent />
-        </ProtectedRoute>
-      </QueryClientProvider>
-    </Provider>
+    <QueryClientProvider client={queryClient}>
+      <ProtectedRoute>
+        <DashboardContent />
+      </ProtectedRoute>
+    </QueryClientProvider>
   );
 }
 

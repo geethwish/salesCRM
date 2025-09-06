@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoginForm } from './LoginForm';
 import { RegisterForm } from './RegisterForm';
-import { useAuth } from '@/lib/contexts/AuthContext';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { LoadingTransition } from '@/lib/components/ui/PageTransition';
 
 type AuthMode = 'login' | 'register';

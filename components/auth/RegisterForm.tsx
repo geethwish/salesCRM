@@ -2,9 +2,25 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { RegisterRequest } from '@/lib/types/auth';
-import { useAuth } from '@/lib/contexts/AuthContext';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { validatePasswordStrength } from '@/lib/utils/auth';
+import { registerSchema, type RegisterFormData } from '@/lib/schemas/auth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { FormFieldTransition } from '@/lib/components/ui/PageTransition';
 
 interface RegisterFormProps {
   onSwitchToLogin?: () => void;
@@ -20,21 +36,28 @@ export function RegisterForm({
   const router = useRouter();
   const { register, isLoading, error, clearError, isAuthenticated } = useAuth();
 
-  const [formData, setFormData] = useState<RegisterRequest>({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    acceptTerms: false,
-  });
-
-  const [formErrors, setFormErrors] = useState<Partial<RegisterRequest & { terms: string }>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<{ isValid: boolean; errors: string[] }>({
     isValid: false,
     errors: [],
   });
+
+  // Initialize form with react-hook-form and Zod validation
+  const form = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      acceptTerms: false,
+    },
+    mode: 'onChange',
+  });
+
+  // Watch password field for strength validation
+  const watchedPassword = form.watch('password');
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -43,83 +66,32 @@ export function RegisterForm({
     }
   }, [isAuthenticated, router, redirectTo]);
 
-  // Clear errors when form data changes
+  // Clear errors when form changes
   useEffect(() => {
     if (error) {
       clearError();
     }
-    setFormErrors({});
-  }, [formData, error, clearError]);
+  }, [form.formState, error, clearError]);
 
   // Check password strength when password changes
   useEffect(() => {
-    if (formData.password) {
-      setPasswordStrength(validatePasswordStrength(formData.password));
+    if (watchedPassword) {
+      setPasswordStrength(validatePasswordStrength(watchedPassword));
     } else {
       setPasswordStrength({ isValid: false, errors: [] });
     }
-  }, [formData.password]);
+  }, [watchedPassword]);
 
-  // Handle input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-  };
-
-  // Validate form
-  const validateForm = (): boolean => {
-    const errors: Partial<RegisterRequest & { terms: string }> = {};
-
-    // Name validation
-    if (!formData.name.trim()) {
-      errors.name = 'Name is required';
-    } else if (formData.name.trim().length < 2) {
-      errors.name = 'Name must be at least 2 characters long';
-    }
-
-    // Email validation
-    if (!formData.email) {
-      errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Please enter a valid email address';
-    }
-
-    // Password validation
-    if (!formData.password) {
-      errors.password = 'Password is required';
-    } else if (!passwordStrength.isValid) {
-      errors.password = passwordStrength.errors[0] || 'Password does not meet requirements';
-    }
-
-    // Confirm password validation
-    if (!formData.confirmPassword) {
-      errors.confirmPassword = 'Please confirm your password';
-    } else if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
-    }
-
-    // Terms validation
-    if (!formData.acceptTerms) {
-      errors.terms = 'You must accept the terms of service';
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
+  // Handle form submission with react-hook-form
+  const onSubmit = async (data: RegisterFormData) => {
     try {
-      await register(formData);
+      await register({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        confirmPassword: data.confirmPassword,
+        acceptTerms: data.acceptTerms,
+      });
       // Redirect will happen automatically via useEffect
     } catch (error) {
       // Error is handled by the auth context
@@ -128,127 +100,131 @@ export function RegisterForm({
   };
 
   return (
-    <div className={`w-full max-w-md mx-auto ${className}`}>
-      <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg px-8 py-6 border border-gray-200 dark:border-gray-700">
-        <div className="mb-6 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Create Account
-          </h2>
-          <p className="text-gray-600 dark:text-gray-300">
+    <div className={`w-full max-w-sm mx-auto ${className}`}>
+      {/* Clean, minimal container matching the LoginForm design */}
+      <div className="bg-background p-8 rounded-3xl border-2 border-border shadow-xl transition-all duration-200">
+        {/* Header Section */}
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold text-foreground mb-4 transition-colors duration-200">
+            Sign Up
+          </h1>
+          <p className="text-lg text-muted-foreground transition-colors duration-200">
             Join us today! Please fill in your information.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name Field */}
-          <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Full Name
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${formErrors.name ? 'border-red-500 dark:border-red-400' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              placeholder="Enter your full name"
-              disabled={isLoading}
-              autoComplete="name"
-            />
-            {formErrors.name && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formErrors.name}</p>
-            )}
-          </div>
-
-          {/* Email Field */}
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${formErrors.email ? 'border-red-500 dark:border-red-400' : 'border-gray-300 dark:border-gray-600'
-                }`}
-              placeholder="Enter your email"
-              disabled={isLoading}
-              autoComplete="email"
-            />
-            {formErrors.email && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formErrors.email}</p>
-            )}
-          </div>
-
-          {/* Password Field */}
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${formErrors.password ? 'border-red-500 dark:border-red-400' : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                placeholder="Create a password"
-                disabled={isLoading}
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                disabled={isLoading}
-              >
-                {showPassword ? (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                  </svg>
-                ) : (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Name Field - Matching LoginForm Design */}
+            <FormFieldTransition delay={0.1}>
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-base font-medium text-foreground transition-colors duration-200">
+                      Full Name
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder="Enter your full name"
+                        autoComplete="name"
+                        disabled={isLoading}
+                        className="h-14 text-base rounded-2xl border-2 border-input bg-background px-4 transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-sm transition-colors duration-200" />
+                  </FormItem>
                 )}
-              </button>
-            </div>
-            {formErrors.password && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formErrors.password}</p>
-            )}
+              />
+            </FormFieldTransition>
 
-            {/* Password Strength Indicator */}
-            {formData.password && (
-              <div className="mt-2">
-                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Password requirements:</div>
-                <ul className="text-xs space-y-1">
+            {/* Email Field - Matching LoginForm Design */}
+            <FormFieldTransition delay={0.2}>
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-base font-medium text-foreground transition-colors duration-200">
+                      Email Address
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="Enter your email"
+                        autoComplete="email"
+                        disabled={isLoading}
+                        className="h-14 text-base rounded-2xl border-2 border-input bg-background px-4 transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-sm transition-colors duration-200" />
+                  </FormItem>
+                )}
+              />
+            </FormFieldTransition>
+
+            {/* Password Field - Matching LoginForm Design */}
+            <FormFieldTransition delay={0.3}>
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-base font-medium text-foreground transition-colors duration-200">
+                      Password
+                    </FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Create a password"
+                          autoComplete="new-password"
+                          disabled={isLoading}
+                          className="h-14 text-base rounded-2xl border-2 border-input bg-background px-4 pr-14 transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          {...field}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute inset-y-0 right-0 px-4 py-0 h-full hover:bg-transparent transition-colors duration-200"
+                          onClick={() => setShowPassword(!showPassword)}
+                          disabled={isLoading}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-5 w-5 text-muted-foreground transition-colors duration-200" />
+                          ) : (
+                            <Eye className="h-5 w-5 text-muted-foreground transition-colors duration-200" />
+                          )}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage className="text-sm transition-colors duration-200" />
+                  </FormItem>
+                )}
+              />
+            </FormFieldTransition>
+
+            {/* Password Strength Indicator - Enhanced Design */}
+            {watchedPassword && (
+              <div className="mt-2 p-3 bg-muted/50 rounded-xl border border-border transition-colors duration-200">
+                <div className="text-sm font-medium text-foreground mb-2">Password requirements:</div>
+                <ul className="text-sm space-y-1">
                   {passwordStrength.errors.map((error, index) => (
-                    <li key={index} className="flex items-center text-red-600 dark:text-red-400">
-                      <svg className="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <li key={index} className="flex items-center text-destructive">
+                      <svg className="h-4 w-4 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                       </svg>
                       {error}
                     </li>
                   ))}
                   {passwordStrength.isValid && (
-                    <li className="flex items-center text-green-600 dark:text-green-400">
-                      <svg className="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <li className="flex items-center text-success">
+                      <svg className="h-4 w-4 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                       Password meets all requirements
@@ -257,129 +233,153 @@ export function RegisterForm({
                 </ul>
               </div>
             )}
-          </div>
 
-          {/* Confirm Password Field */}
-          <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Confirm Password
-            </label>
-            <div className="relative">
-              <input
-                type={showConfirmPassword ? 'text' : 'password'}
-                id="confirmPassword"
+            {/* Confirm Password Field - Matching LoginForm Design */}
+            <FormFieldTransition delay={0.4}>
+              <FormField
+                control={form.control}
                 name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${formErrors.confirmPassword ? 'border-red-500 dark:border-red-400' : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                placeholder="Confirm your password"
-                disabled={isLoading}
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                disabled={isLoading}
-              >
-                {showConfirmPassword ? (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                  </svg>
-                ) : (
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
+                render={({ field }) => (
+                  <FormItem className="space-y-2">
+                    <FormLabel className="text-base font-medium text-foreground transition-colors duration-200">
+                      Confirm Password
+                    </FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          placeholder="Confirm your password"
+                          autoComplete="new-password"
+                          disabled={isLoading}
+                          className="h-14 text-base rounded-2xl border-2 border-input bg-background px-4 pr-14 transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          {...field}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute inset-y-0 right-0 px-4 py-0 h-full hover:bg-transparent transition-colors duration-200"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          disabled={isLoading}
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="h-5 w-5 text-muted-foreground transition-colors duration-200" />
+                          ) : (
+                            <Eye className="h-5 w-5 text-muted-foreground transition-colors duration-200" />
+                          )}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage className="text-sm transition-colors duration-200" />
+                  </FormItem>
                 )}
-              </button>
-            </div>
-            {formErrors.confirmPassword && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formErrors.confirmPassword}</p>
-            )}
-          </div>
-
-          {/* Terms Acceptance */}
-          <div>
-            <div className="flex items-start">
-              <input
-                type="checkbox"
-                id="acceptTerms"
-                name="acceptTerms"
-                checked={formData.acceptTerms}
-                onChange={handleInputChange}
-                className={`h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded mt-1 bg-white dark:bg-gray-700 ${formErrors.terms ? 'border-red-500 dark:border-red-400' : ''
-                  }`}
-                disabled={isLoading}
               />
-              <label htmlFor="acceptTerms" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                I agree to the{' '}
-                <button
-                  type="button"
-                  className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 focus:outline-none focus:underline"
-                  disabled={isLoading}
-                >
-                  Terms of Service
-                </button>
-                {' '}and{' '}
-                <button
-                  type="button"
-                  className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 focus:outline-none focus:underline"
-                  disabled={isLoading}
-                >
-                  Privacy Policy
-                </button>
-              </label>
-            </div>
-            {formErrors.terms && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formErrors.terms}</p>
-            )}
-          </div>
+            </FormFieldTransition>
 
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-            </div>
-          )}
+            {/* Terms Acceptance - Matching LoginForm Design */}
+            <FormFieldTransition delay={0.5}>
+              <FormField
+                control={form.control}
+                name="acceptTerms"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-3 space-y-0 py-2">
+                    <FormControl>
+                      <Checkbox
+                        disabled={isLoading}
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="h-5 w-5 rounded border-2 border-input transition-colors duration-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                      />
+                    </FormControl>
+                    <FormLabel className="text-base font-normal text-foreground transition-colors duration-200 cursor-pointer leading-relaxed">
+                      I agree to the{' '}
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="px-0 text-base font-normal text-primary hover:text-primary/80 h-auto p-0 underline underline-offset-4 transition-colors duration-200"
+                        disabled={isLoading}
+                      >
+                        Terms of Service
+                      </Button>
+                      {' '}and{' '}
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="px-0 text-base font-normal text-primary hover:text-primary/80 h-auto p-0 underline underline-offset-4 transition-colors duration-200"
+                        disabled={isLoading}
+                      >
+                        Privacy Policy
+                      </Button>
+                    </FormLabel>
+                    <FormMessage className="text-sm transition-colors duration-200" />
+                  </FormItem>
+                )}
+              />
+            </FormFieldTransition>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? (
-              <div className="flex items-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Creating account...
+            {/* Error Message - Enhanced Design */}
+            {error && (
+              <div className="bg-destructive/10 border-2 border-destructive/20 rounded-2xl p-4 transition-colors duration-200">
+                <p className="text-base text-destructive font-medium transition-colors duration-200">{error}</p>
               </div>
-            ) : (
-              'Create Account'
             )}
-          </button>
-        </form>
 
-        {/* Switch to Login */}
+            {/* Submit Button - Brand Color #01257D */}
+            <FormFieldTransition delay={0.6}>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-14 text-lg font-semibold rounded-2xl transition-all duration-200 mt-6 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: '#01257D',
+                  color: 'white',
+                  border: 'none',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isLoading) {
+                    e.currentTarget.style.backgroundColor = '#001f66';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isLoading) {
+                    e.currentTarget.style.backgroundColor = '#01257D';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }
+                }}
+                onMouseDown={(e) => {
+                  if (!isLoading) {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }
+                }}
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center">
+                    <Loader2 className="mr-3 h-5 w-5 animate-spin text-white" />
+                    <span className="text-white">Creating account...</span>
+                  </div>
+                ) : (
+                  <span className="text-white font-semibold">Sign Up</span>
+                )}
+              </Button>
+            </FormFieldTransition>
+          </form>
+        </Form>
+
+        {/* Switch to Login - Matching LoginForm Design */}
         {onSwitchToLogin && (
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="mt-8 text-center">
+            <p className="text-lg text-foreground transition-colors duration-200">
               Already have an account?{' '}
-              <button
+              <Button
                 type="button"
+                variant="link"
+                className="px-0 text-lg font-medium text-primary hover:text-primary/80 underline underline-offset-4 transition-colors duration-200"
                 onClick={onSwitchToLogin}
-                className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 focus:outline-none focus:underline font-medium"
                 disabled={isLoading}
               >
                 Sign in here
-              </button>
+              </Button>
             </p>
           </div>
         )}

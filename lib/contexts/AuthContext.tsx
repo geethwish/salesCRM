@@ -1,18 +1,16 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   AuthState,
   AuthAction,
-  PublicUser,
   LoginRequest,
   RegisterRequest,
   UpdateProfile,
   ChangePassword,
   UseAuthReturn
 } from '@/lib/types/auth';
-import { ApiResponse } from '@/lib/types/order';
 import { authApi } from '@/lib/utils/httpClient';
 import { authToasts } from '@/lib/components/ui/Toast';
 
@@ -94,15 +92,12 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [state, dispatch] = useReducer(authReducer, initialState);
   const router = useRouter();
-  const pathname = usePathname();
+
 
   // Check for existing authentication on mount
   useEffect(() => {
     checkAuthStatus();
   }, []);
-
-  // Route protection is now handled at the root level (app/page.tsx)
-  // Individual pages can still implement their own protection if needed
 
   // Check authentication status
   const checkAuthStatus = async () => {
@@ -244,29 +239,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Update profile function
   const updateProfile = async (profileData: UpdateProfile): Promise<void> => {
     try {
-      const token = state.token || getStoredToken();
+      const response = await authApi.updateProfile(profileData);
+      const data = response.data;
 
-      const response = await fetch('/api/auth/profile', {
-        method: 'PUT',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(profileData),
-      });
-
-      const data: ApiResponse<PublicUser> = await response.json();
-
-      if (response.ok && data.success && data.data) {
+      if (data.success && data.data) {
         dispatch({ type: 'AUTH_UPDATE_USER', payload: data.data });
+        // Show success toast
+        authToasts.profileUpdateSuccess();
       } else {
         const errorMessage = data.error?.message || 'Profile update failed';
+        dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
+        authToasts.validationError(errorMessage);
         throw new Error(errorMessage);
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Profile update failed';
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error?.message || error.message || 'Profile update failed';
       dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
+      authToasts.validationError(errorMessage);
       throw error;
     }
   };
@@ -274,27 +263,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Change password function
   const changePassword = async (passwordData: ChangePassword): Promise<void> => {
     try {
-      const token = state.token || getStoredToken();
+      const response = await authApi.changePassword(passwordData);
+      const data = response.data;
 
-      const response = await fetch('/api/auth/change-password', {
-        method: 'PUT',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(passwordData),
-      });
-
-      const data: ApiResponse = await response.json();
-
-      if (!response.ok || !data.success) {
+      if (data.success) {
+        // Show success toast
+        authToasts.passwordChangeSuccess();
+      } else {
         const errorMessage = data.error?.message || 'Password change failed';
+        dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
+        authToasts.validationError(errorMessage);
         throw new Error(errorMessage);
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Password change failed';
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error?.message || error.message || 'Password change failed';
       dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
+      authToasts.validationError(errorMessage);
       throw error;
     }
   };

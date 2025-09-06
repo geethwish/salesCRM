@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+import mongoose from "mongoose";
 import {
   Order,
   OrderQuery,
@@ -7,49 +7,89 @@ import {
 } from "@/lib/types/order";
 import { validateDateRange } from "@/lib/utils/validation";
 import { PerformanceTimer, PerformanceMetrics } from "@/lib/utils/performance";
+import { connectToDatabase } from "@/lib/database/connection";
+import {
+  withDatabase,
+  paginate,
+  searchDocuments,
+  getDateRange,
+  handleDatabaseError,
+} from "@/lib/database/utils";
+import OrderModel, { IOrder } from "@/lib/models/Order";
 
 /**
- * In-memory data store for orders
+ * MongoDB-based data store for orders
  */
 class OrderService {
-  private orders: Map<string, Order> = new Map();
   private cache: Map<string, { data: any; timestamp: number; ttl: number }> =
     new Map();
 
   /**
-   * Initialize with sample data
+   * Initialize database connection
    */
   constructor() {
-    this.seedSampleData();
+    this.initializeDatabase();
+  }
+
+  /**
+   * Initialize database connection
+   */
+  private async initializeDatabase(): Promise<void> {
+    try {
+      await connectToDatabase();
+    } catch (error) {
+      console.error("Failed to initialize database connection:", error);
+    }
   }
 
   /**
    * Create a new order
    */
   async createOrder(
-    orderData: Omit<Order, "id" | "createdAt" | "updatedAt">
+    orderData: Omit<Order, "id" | "createdAt" | "updatedAt">,
+    userId?: string
   ): Promise<Order> {
-    const id = uuidv4();
-    const now = new Date();
+    return withDatabase(async () => {
+      try {
+        // Ensure we have a userId (for user-scoped data)
+        if (!userId) {
+          throw new Error("User ID is required to create an order");
+        }
 
-    const order: Order = {
-      ...orderData,
-      id,
-      createdAt: now,
-      updatedAt: now,
-    };
+        const orderDoc = new OrderModel({
+          ...orderData,
+          userId: new mongoose.Types.ObjectId(userId),
+        });
 
-    this.orders.set(id, order);
-    this.clearCache(); // Clear cache when data changes
+        const savedOrder = await orderDoc.save();
+        this.clearCache(); // Clear cache when data changes
 
-    return order;
+        return savedOrder.toAPIResponse();
+      } catch (error) {
+        handleDatabaseError(error);
+      }
+    });
   }
 
   /**
    * Get order by ID
    */
-  async getOrderById(id: string): Promise<Order | null> {
-    return this.orders.get(id) || null;
+  async getOrderById(id: string, userId?: string): Promise<Order | null> {
+    return withDatabase(async () => {
+      try {
+        const filter: any = { _id: new mongoose.Types.ObjectId(id) };
+
+        // Add user filter if userId is provided (for user-scoped data)
+        if (userId) {
+          filter.userId = new mongoose.Types.ObjectId(userId);
+        }
+
+        const order = await OrderModel.findOne(filter);
+        return order ? order.toAPIResponse() : null;
+      } catch (error) {
+        handleDatabaseError(error);
+      }
+    });
   }
 
   /**
@@ -57,250 +97,341 @@ class OrderService {
    */
   async updateOrder(
     id: string,
-    updateData: OrderUpdate
+    updateData: OrderUpdate,
+    userId?: string
   ): Promise<Order | null> {
-    const existingOrder = this.orders.get(id);
-    if (!existingOrder) {
-      return null;
-    }
+    return withDatabase(async () => {
+      try {
+        const filter: any = { _id: new mongoose.Types.ObjectId(id) };
 
-    const updatedOrder: Order = {
-      ...existingOrder,
-      ...updateData,
-      updatedAt: new Date(),
-    };
+        // Add user filter if userId is provided (for user-scoped data)
+        if (userId) {
+          filter.userId = new mongoose.Types.ObjectId(userId);
+        }
 
-    this.orders.set(id, updatedOrder);
-    this.clearCache(); // Clear cache when data changes
+        const updatedOrder = await OrderModel.findOneAndUpdate(
+          filter,
+          { ...updateData, updatedAt: new Date() },
+          { new: true, runValidators: true }
+        );
 
-    return updatedOrder;
+        if (updatedOrder) {
+          this.clearCache(); // Clear cache when data changes
+          return updatedOrder.toAPIResponse();
+        }
+
+        return null;
+      } catch (error) {
+        handleDatabaseError(error);
+      }
+    });
   }
 
   /**
    * Delete an order
    */
-  async deleteOrder(id: string): Promise<boolean> {
-    const deleted = this.orders.delete(id);
-    if (deleted) {
-      this.clearCache(); // Clear cache when data changes
-    }
-    return deleted;
+  async deleteOrder(id: string, userId?: string): Promise<boolean> {
+    return withDatabase(async () => {
+      try {
+        const filter: any = { _id: new mongoose.Types.ObjectId(id) };
+
+        // Add user filter if userId is provided (for user-scoped data)
+        if (userId) {
+          filter.userId = new mongoose.Types.ObjectId(userId);
+        }
+
+        const result = await OrderModel.deleteOne(filter);
+
+        if (result.deletedCount > 0) {
+          this.clearCache(); // Clear cache when data changes
+          return true;
+        }
+
+        return false;
+      } catch (error) {
+        handleDatabaseError(error);
+      }
+    });
   }
 
   /**
    * Get orders with filtering, pagination, and sorting
    */
-  async getOrders(query: OrderQuery): Promise<OrderListResponse> {
+  async getOrders(
+    query: OrderQuery,
+    userId?: string
+  ): Promise<OrderListResponse> {
     return PerformanceTimer.timeAsync("getOrders", async () => {
-      const cacheKey = JSON.stringify(query);
-      const cached = this.getFromCache(cacheKey);
-      if (cached) {
-        PerformanceMetrics.record("getOrders.cache_hit", 0);
-        return cached;
-      }
-
-      PerformanceMetrics.record("getOrders.cache_miss", 0);
-
-      let filteredOrders = Array.from(this.orders.values());
-
-      // Apply filters
-      if (query.category) {
-        filteredOrders = filteredOrders.filter((order) =>
-          order.category.toLowerCase().includes(query.category!.toLowerCase())
-        );
-      }
-
-      if (query.source) {
-        filteredOrders = filteredOrders.filter((order) =>
-          order.source.toLowerCase().includes(query.source!.toLowerCase())
-        );
-      }
-
-      if (query.geo) {
-        filteredOrders = filteredOrders.filter((order) =>
-          order.geo.toLowerCase().includes(query.geo!.toLowerCase())
-        );
-      }
-
-      if (query.search) {
-        const searchTerm = query.search.toLowerCase();
-        filteredOrders = filteredOrders.filter(
-          (order) =>
-            order.customer.toLowerCase().includes(searchTerm) ||
-            order.id.toLowerCase().includes(searchTerm) ||
-            order.category.toLowerCase().includes(searchTerm) ||
-            order.source.toLowerCase().includes(searchTerm) ||
-            order.geo.toLowerCase().includes(searchTerm)
-        );
-      }
-
-      // Date range filtering
-      if (query.dateFrom || query.dateTo) {
-        if (!validateDateRange(query.dateFrom, query.dateTo)) {
-          throw new Error("Invalid date range");
-        }
-
-        filteredOrders = filteredOrders.filter((order) => {
-          const orderDate = new Date(order.date);
-
-          if (query.dateFrom) {
-            const fromDate = new Date(query.dateFrom);
-            if (orderDate < fromDate) return false;
+      return withDatabase(async () => {
+        try {
+          const cacheKey = JSON.stringify({ ...query, userId });
+          const cached = this.getFromCache(cacheKey);
+          if (cached) {
+            PerformanceMetrics.record("getOrders.cache_hit", 0);
+            return cached;
           }
 
-          if (query.dateTo) {
-            const toDate = new Date(query.dateTo);
-            if (orderDate > toDate) return false;
+          PerformanceMetrics.record("getOrders.cache_miss", 0);
+
+          // Build MongoDB filter
+          const filter: any = {};
+
+          // Add user filter if userId is provided (for user-scoped data)
+          if (userId) {
+            filter.userId = new mongoose.Types.ObjectId(userId);
           }
 
-          return true;
-        });
-      }
+          // Apply filters
+          if (query.category) {
+            filter.category = new RegExp(query.category, "i");
+          }
 
-      // Sorting
-      filteredOrders.sort((a, b) => {
-        let aValue: any;
-        let bValue: any;
+          if (query.source) {
+            filter.source = new RegExp(query.source, "i");
+          }
 
-        switch (query.sortBy) {
-          case "date":
-            aValue = new Date(a.date);
-            bValue = new Date(b.date);
-            break;
-          case "customer":
-            aValue = a.customer.toLowerCase();
-            bValue = b.customer.toLowerCase();
-            break;
-          case "amount":
-            aValue = a.amount || 0;
-            bValue = b.amount || 0;
-            break;
-          case "createdAt":
-            aValue = a.createdAt || new Date(0);
-            bValue = b.createdAt || new Date(0);
-            break;
-          default:
-            aValue = new Date(a.date);
-            bValue = new Date(b.date);
-        }
+          if (query.geo) {
+            filter.geo = new RegExp(query.geo, "i");
+          }
 
-        if (query.sortOrder === "asc") {
-          return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-        } else {
-          return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+          // Date range filtering
+          if (query.dateFrom || query.dateTo) {
+            if (!validateDateRange(query.dateFrom, query.dateTo)) {
+              throw new Error("Invalid date range");
+            }
+
+            const dateFilter = getDateRange(query.dateFrom, query.dateTo);
+            if (dateFilter) {
+              // Convert string dates to Date objects for comparison
+              if (query.dateFrom || query.dateTo) {
+                filter.$expr = {
+                  $and: [
+                    ...(query.dateFrom
+                      ? [
+                          {
+                            $gte: [
+                              { $dateFromString: { dateString: "$date" } },
+                              new Date(query.dateFrom),
+                            ],
+                          },
+                        ]
+                      : []),
+                    ...(query.dateTo
+                      ? [
+                          {
+                            $lte: [
+                              { $dateFromString: { dateString: "$date" } },
+                              new Date(query.dateTo),
+                            ],
+                          },
+                        ]
+                      : []),
+                  ],
+                };
+              }
+            }
+          }
+
+          // Build sort object
+          const sort: any = {};
+          const sortField =
+            query.sortBy === "createdAt"
+              ? "createdAt"
+              : query.sortBy === "amount"
+              ? "amount"
+              : query.sortBy === "customer"
+              ? "customer"
+              : "date";
+          sort[sortField] = query.sortOrder === "asc" ? 1 : -1;
+
+          // Use search or regular query
+          let result;
+          if (query.search) {
+            result = await searchDocuments(OrderModel, query.search, filter, {
+              page: query.page,
+              limit: query.limit,
+              sortBy: sortField,
+              sortOrder: query.sortOrder,
+            });
+          } else {
+            result = await paginate(OrderModel, filter, {
+              page: query.page,
+              limit: query.limit,
+              sortBy: sortField,
+              sortOrder: query.sortOrder,
+            });
+          }
+
+          // Transform data to API format
+          const orders = result.data.map((order: IOrder) =>
+            order.toAPIResponse()
+          );
+
+          const response: OrderListResponse = {
+            orders,
+            pagination: result.pagination,
+            filters: {
+              category: query.category,
+              source: query.source,
+              geo: query.geo,
+              dateFrom: query.dateFrom,
+              dateTo: query.dateTo,
+              search: query.search,
+            },
+          };
+
+          // Cache the response for 5 minutes
+          this.setCache(cacheKey, response, 5 * 60 * 1000);
+
+          return response;
+        } catch (error) {
+          handleDatabaseError(error);
         }
       });
-
-      // Pagination
-      const total = filteredOrders.length;
-      const totalPages = Math.ceil(total / query.limit);
-      const startIndex = (query.page - 1) * query.limit;
-      const endIndex = startIndex + query.limit;
-      const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
-
-      const response: OrderListResponse = {
-        orders: paginatedOrders,
-        pagination: {
-          page: query.page,
-          limit: query.limit,
-          total,
-          totalPages,
-          hasNext: query.page < totalPages,
-          hasPrev: query.page > 1,
-        },
-        filters: {
-          category: query.category,
-          source: query.source,
-          geo: query.geo,
-          dateFrom: query.dateFrom,
-          dateTo: query.dateTo,
-          search: query.search,
-        },
-      };
-
-      // Cache the response for 5 minutes
-      this.setCache(cacheKey, response, 5 * 60 * 1000);
-
-      return response;
     });
   }
 
   /**
    * Get order statistics
    */
-  async getOrderStats() {
-    const cacheKey = "order-stats";
-    const cached = this.getFromCache(cacheKey);
-    if (cached) {
-      return cached;
-    }
+  async getOrderStats(userId?: string) {
+    return withDatabase(async () => {
+      try {
+        const cacheKey = `order-stats-${userId || "all"}`;
+        const cached = this.getFromCache(cacheKey);
+        if (cached) {
+          return cached;
+        }
 
-    const orders = Array.from(this.orders.values());
+        // Build filter for user-scoped data
+        const matchFilter: any = {};
+        if (userId) {
+          matchFilter.userId = new mongoose.Types.ObjectId(userId);
+        }
 
-    const stats = {
-      total: orders.length,
-      byCategory: {} as Record<string, number>,
-      bySource: {} as Record<string, number>,
-      byLocation: {} as Record<string, number>,
-      totalAmount: 0,
-      averageAmount: 0,
-    };
+        // Use MongoDB aggregation pipeline for statistics
+        const pipeline = [
+          ...(Object.keys(matchFilter).length > 0
+            ? [{ $match: matchFilter }]
+            : []),
+          {
+            $group: {
+              _id: null,
+              total: { $sum: 1 },
+              totalAmount: { $sum: { $ifNull: ["$amount", 0] } },
+              averageAmount: { $avg: { $ifNull: ["$amount", 0] } },
+              categories: { $push: "$category" },
+              sources: { $push: "$source" },
+              locations: { $push: "$geo" },
+            },
+          },
+        ];
 
-    orders.forEach((order) => {
-      // Count by category
-      stats.byCategory[order.category] =
-        (stats.byCategory[order.category] || 0) + 1;
+        const [aggregateResult] = await OrderModel.aggregate(pipeline);
 
-      // Count by source
-      stats.bySource[order.source] = (stats.bySource[order.source] || 0) + 1;
+        if (!aggregateResult) {
+          const emptyStats = {
+            total: 0,
+            byCategory: {},
+            bySource: {},
+            byLocation: {},
+            totalAmount: 0,
+            averageAmount: 0,
+          };
+          this.setCache(cacheKey, emptyStats, 10 * 60 * 1000);
+          return emptyStats;
+        }
 
-      // Count by location
-      stats.byLocation[order.geo] = (stats.byLocation[order.geo] || 0) + 1;
+        // Process categories, sources, and locations
+        const byCategory: Record<string, number> = {};
+        const bySource: Record<string, number> = {};
+        const byLocation: Record<string, number> = {};
 
-      // Sum amounts
-      if (order.amount) {
-        stats.totalAmount += order.amount;
+        aggregateResult.categories.forEach((category: string) => {
+          byCategory[category] = (byCategory[category] || 0) + 1;
+        });
+
+        aggregateResult.sources.forEach((source: string) => {
+          bySource[source] = (bySource[source] || 0) + 1;
+        });
+
+        aggregateResult.locations.forEach((location: string) => {
+          byLocation[location] = (byLocation[location] || 0) + 1;
+        });
+
+        const stats = {
+          total: aggregateResult.total,
+          byCategory,
+          bySource,
+          byLocation,
+          totalAmount: aggregateResult.totalAmount,
+          averageAmount: aggregateResult.averageAmount || 0,
+        };
+
+        // Cache for 10 minutes
+        this.setCache(cacheKey, stats, 10 * 60 * 1000);
+
+        return stats;
+      } catch (error) {
+        handleDatabaseError(error);
       }
     });
-
-    stats.averageAmount = stats.total > 0 ? stats.totalAmount / stats.total : 0;
-
-    // Cache for 10 minutes
-    this.setCache(cacheKey, stats, 10 * 60 * 1000);
-
-    return stats;
   }
 
   /**
    * Clear all orders (for testing)
    */
-  async clearAllOrders(): Promise<void> {
-    this.orders.clear();
-    this.clearCache();
+  async clearAllOrders(userId?: string): Promise<void> {
+    return withDatabase(async () => {
+      try {
+        const filter: any = {};
+        if (userId) {
+          filter.userId = new mongoose.Types.ObjectId(userId);
+        }
+
+        await OrderModel.deleteMany(filter);
+        this.clearCache();
+      } catch (error) {
+        handleDatabaseError(error);
+      }
+    });
   }
 
   /**
    * Get total count of orders
    */
-  async getOrderCount(): Promise<number> {
-    return this.orders.size;
-  }
+  async getOrderCount(userId?: string): Promise<number> {
+    return withDatabase(async () => {
+      try {
+        const filter: any = {};
+        if (userId) {
+          filter.userId = new mongoose.Types.ObjectId(userId);
+        }
 
-  /**
-   * Seed sample data
-   */
-  private seedSampleData(): void {
-    // Sample data will be loaded via the seed script
-    // This method is kept for potential future use
+        return await OrderModel.countDocuments(filter);
+      } catch (error) {
+        handleDatabaseError(error);
+      }
+    });
   }
 
   /**
    * Load seed data (used by seed script)
    */
-  async loadSeedData(seedOrders: any[]): Promise<void> {
-    for (const orderData of seedOrders) {
-      await this.createOrder(orderData);
-    }
+  async loadSeedData(seedOrders: any[], userId: string): Promise<void> {
+    return withDatabase(async () => {
+      try {
+        const ordersWithUserId = seedOrders.map((orderData) => ({
+          ...orderData,
+          userId: new mongoose.Types.ObjectId(userId),
+        }));
+
+        await OrderModel.insertMany(ordersWithUserId);
+        this.clearCache();
+      } catch (error) {
+        handleDatabaseError(error);
+      }
+    });
   }
 
   /**

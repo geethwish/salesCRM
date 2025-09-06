@@ -1,125 +1,182 @@
-import { v4 as uuidv4 } from 'uuid';
-import { 
-  User, 
-  PublicUser, 
-  LoginRequest, 
-  RegisterRequest, 
-  UpdateProfile, 
+import mongoose from "mongoose";
+import {
+  User,
+  PublicUser,
+  LoginRequest,
+  RegisterRequest,
+  UpdateProfile,
   ChangePassword,
   UserSchema,
-  PublicUserSchema 
-} from '@/lib/types/auth';
-import { 
-  hashPassword, 
-  verifyPassword, 
-  sanitizeUser, 
-  validatePasswordStrength 
-} from '@/lib/utils/auth';
-import { ERROR_MESSAGES } from '@/lib/constants';
+  PublicUserSchema,
+} from "@/lib/types/auth";
+import {
+  hashPassword,
+  verifyPassword,
+  sanitizeUser,
+  validatePasswordStrength,
+} from "@/lib/utils/auth";
+import { ERROR_MESSAGES } from "@/lib/constants";
+import { connectToDatabase } from "@/lib/database/connection";
+import { withDatabase, handleDatabaseError } from "@/lib/database/utils";
+import UserModel, { IUser } from "@/lib/models/User";
 
-// In-memory user storage (replace with database in production)
+// MongoDB-based user storage
 class UserStorage {
-  private users: Map<string, User> = new Map();
-  private emailIndex: Map<string, string> = new Map(); // email -> userId mapping
-
-  // Initialize with a default admin user for testing
   constructor() {
-    this.seedDefaultUsers();
+    this.initializeDatabase();
   }
 
-  private async seedDefaultUsers() {
-    const adminUser: User = {
-      id: uuidv4(),
-      name: 'Admin User',
-      email: 'admin@salescrm.com',
-      password: await hashPassword('Admin123!'),
-      role: 'admin',
-      isActive: true,
-      emailVerified: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    const testUser: User = {
-      id: uuidv4(),
-      name: 'Test User',
-      email: 'user@salescrm.com',
-      password: await hashPassword('User123!'),
-      role: 'user',
-      isActive: true,
-      emailVerified: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    this.users.set(adminUser.id, adminUser);
-    this.users.set(testUser.id, testUser);
-    this.emailIndex.set(adminUser.email, adminUser.id);
-    this.emailIndex.set(testUser.email, testUser.id);
-  }
-
-  async create(user: User): Promise<User> {
-    // Check if email already exists
-    if (this.emailIndex.has(user.email)) {
-      throw new Error(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
+  private async initializeDatabase(): Promise<void> {
+    try {
+      await connectToDatabase();
+    } catch (error) {
+      console.error("Failed to initialize database connection:", error);
     }
+  }
 
-    this.users.set(user.id, user);
-    this.emailIndex.set(user.email, user.id);
-    return user;
+  async create(userData: Omit<User, "id">): Promise<User> {
+    return withDatabase(async () => {
+      try {
+        // Check if email already exists
+        const existingUser = await UserModel.findOne({
+          email: userData.email.toLowerCase(),
+        });
+        if (existingUser) {
+          throw new Error(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
+        }
+
+        // Create new user document
+        const userDoc = new UserModel({
+          email: userData.email.toLowerCase(),
+          password: userData.password, // Will be hashed by pre-save middleware
+          name: userData.name,
+          role: userData.role,
+          isActive: userData.isActive,
+          emailVerified: userData.emailVerified,
+        });
+
+        const savedUser = await userDoc.save();
+        return this.convertToUser(savedUser);
+      } catch (error) {
+        handleDatabaseError(error);
+      }
+    });
   }
 
   async findById(id: string): Promise<User | null> {
-    return this.users.get(id) || null;
+    return withDatabase(async () => {
+      try {
+        const user = await UserModel.findById(new mongoose.Types.ObjectId(id));
+        return user ? this.convertToUser(user) : null;
+      } catch (error) {
+        console.error("Error finding user by ID:", error);
+        return null;
+      }
+    });
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    const userId = this.emailIndex.get(email.toLowerCase());
-    return userId ? this.users.get(userId) || null : null;
+    return withDatabase(async () => {
+      try {
+        const user = await UserModel.findOne({ email: email.toLowerCase() });
+        return user ? this.convertToUser(user) : null;
+      } catch (error) {
+        console.error("Error finding user by email:", error);
+        return null;
+      }
+    });
+  }
+
+  async findByEmailWithPassword(email: string): Promise<User | null> {
+    return withDatabase(async () => {
+      try {
+        const user = await UserModel.findOne({
+          email: email.toLowerCase(),
+        }).select("+password");
+        return user ? this.convertToUser(user) : null;
+      } catch (error) {
+        console.error("Error finding user by email with password:", error);
+        return null;
+      }
+    });
   }
 
   async update(id: string, updates: Partial<User>): Promise<User | null> {
-    const user = this.users.get(id);
-    if (!user) {
-      return null;
-    }
+    return withDatabase(async () => {
+      try {
+        // If email is being updated, check if it already exists
+        if (updates.email) {
+          const existingUser = await UserModel.findOne({
+            email: updates.email.toLowerCase(),
+            _id: { $ne: new mongoose.Types.ObjectId(id) },
+          });
+          if (existingUser) {
+            throw new Error(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
+          }
+        }
 
-    // If email is being updated, update the email index
-    if (updates.email && updates.email !== user.email) {
-      // Check if new email already exists
-      if (this.emailIndex.has(updates.email)) {
-        throw new Error(ERROR_MESSAGES.EMAIL_ALREADY_EXISTS);
+        const updatedUser = await UserModel.findByIdAndUpdate(
+          new mongoose.Types.ObjectId(id),
+          { ...updates, updatedAt: new Date() },
+          { new: true, runValidators: true }
+        );
+
+        return updatedUser ? this.convertToUser(updatedUser) : null;
+      } catch (error) {
+        handleDatabaseError(error);
       }
-      
-      // Remove old email from index and add new one
-      this.emailIndex.delete(user.email);
-      this.emailIndex.set(updates.email, id);
-    }
-
-    const updatedUser = { ...user, ...updates, updatedAt: new Date() };
-    this.users.set(id, updatedUser);
-    return updatedUser;
+    });
   }
 
   async delete(id: string): Promise<boolean> {
-    const user = this.users.get(id);
-    if (!user) {
-      return false;
-    }
-
-    this.users.delete(id);
-    this.emailIndex.delete(user.email);
-    return true;
+    return withDatabase(async () => {
+      try {
+        const result = await UserModel.deleteOne({
+          _id: new mongoose.Types.ObjectId(id),
+        });
+        return result.deletedCount > 0;
+      } catch (error) {
+        console.error("Error deleting user:", error);
+        return false;
+      }
+    });
   }
 
   async list(): Promise<User[]> {
-    return Array.from(this.users.values());
+    return withDatabase(async () => {
+      try {
+        const users = await UserModel.find({});
+        return users.map((user) => this.convertToUser(user));
+      } catch (error) {
+        console.error("Error listing users:", error);
+        return [];
+      }
+    });
   }
 
   async clear(): Promise<void> {
-    this.users.clear();
-    this.emailIndex.clear();
-    await this.seedDefaultUsers();
+    return withDatabase(async () => {
+      try {
+        await UserModel.deleteMany({});
+      } catch (error) {
+        console.error("Error clearing users:", error);
+      }
+    });
+  }
+
+  // Helper method to convert MongoDB document to User interface
+  private convertToUser(userDoc: IUser): User {
+    return {
+      id: userDoc._id.toString(),
+      email: userDoc.email,
+      password: userDoc.password,
+      name: userDoc.name,
+      role: userDoc.role,
+      isActive: userDoc.isActive,
+      emailVerified: userDoc.emailVerified,
+      createdAt: userDoc.createdAt,
+      updatedAt: userDoc.updatedAt,
+    };
   }
 }
 
@@ -138,7 +195,7 @@ class UserService {
       // Validate password strength
       const passwordValidation = validatePasswordStrength(userData.password);
       if (!passwordValidation.isValid) {
-        throw new Error(passwordValidation.errors.join(', '));
+        throw new Error(passwordValidation.errors.join(", "));
       }
 
       // Check if user already exists
@@ -156,7 +213,7 @@ class UserService {
         name: userData.name,
         email: userData.email.toLowerCase(),
         password: hashedPassword,
-        role: 'user', // Default role
+        role: "user", // Default role
         isActive: true,
         emailVerified: false, // Would be false in production until email verification
         createdAt: new Date(),
@@ -166,13 +223,14 @@ class UserService {
       // Validate user data
       const validatedUser = UserSchema.parse(user);
 
-      // Save user
-      const savedUser = await userStorage.create(validatedUser);
+      // Save user (exclude id since it will be generated by MongoDB)
+      const { id, ...userDataWithoutId } = validatedUser;
+      const savedUser = await userStorage.create(userDataWithoutId);
 
       // Return sanitized user data
       return sanitizeUser(savedUser);
     } catch (error) {
-      console.error('Error registering user:', error);
+      console.error("Error registering user:", error);
       throw error;
     }
   }
@@ -182,8 +240,8 @@ class UserService {
    */
   async loginUser(credentials: LoginRequest): Promise<PublicUser> {
     try {
-      // Find user by email
-      const user = await userStorage.findByEmail(credentials.email);
+      // Find user by email (including password for verification)
+      const user = await userStorage.findByEmailWithPassword(credentials.email);
       if (!user) {
         throw new Error(ERROR_MESSAGES.INVALID_CREDENTIALS);
       }
@@ -193,8 +251,17 @@ class UserService {
         throw new Error(ERROR_MESSAGES.ACCOUNT_DISABLED);
       }
 
-      // Verify password
-      const isPasswordValid = await verifyPassword(credentials.password, user.password);
+      // Verify password using the User model's comparePassword method
+      const userDoc = await UserModel.findOne({
+        email: credentials.email.toLowerCase(),
+      }).select("+password");
+      if (!userDoc) {
+        throw new Error(ERROR_MESSAGES.INVALID_CREDENTIALS);
+      }
+
+      const isPasswordValid = await userDoc.comparePassword(
+        credentials.password
+      );
       if (!isPasswordValid) {
         throw new Error(ERROR_MESSAGES.INVALID_CREDENTIALS);
       }
@@ -205,7 +272,7 @@ class UserService {
       // Return sanitized user data
       return sanitizeUser(user);
     } catch (error) {
-      console.error('Error logging in user:', error);
+      console.error("Error logging in user:", error);
       throw error;
     }
   }
@@ -218,7 +285,7 @@ class UserService {
       const user = await userStorage.findById(id);
       return user ? sanitizeUser(user) : null;
     } catch (error) {
-      console.error('Error getting user by ID:', error);
+      console.error("Error getting user by ID:", error);
       return null;
     }
   }
@@ -231,7 +298,7 @@ class UserService {
       const user = await userStorage.findByEmail(email);
       return user ? sanitizeUser(user) : null;
     } catch (error) {
-      console.error('Error getting user by email:', error);
+      console.error("Error getting user by email:", error);
       return null;
     }
   }
@@ -239,7 +306,10 @@ class UserService {
   /**
    * Update user profile
    */
-  async updateProfile(userId: string, updates: UpdateProfile): Promise<PublicUser> {
+  async updateProfile(
+    userId: string,
+    updates: UpdateProfile
+  ): Promise<PublicUser> {
     try {
       const user = await userStorage.findById(userId);
       if (!user) {
@@ -254,7 +324,7 @@ class UserService {
 
       return sanitizeUser(updatedUser);
     } catch (error) {
-      console.error('Error updating user profile:', error);
+      console.error("Error updating user profile:", error);
       throw error;
     }
   }
@@ -262,7 +332,10 @@ class UserService {
   /**
    * Change user password
    */
-  async changePassword(userId: string, passwordData: ChangePassword): Promise<void> {
+  async changePassword(
+    userId: string,
+    passwordData: ChangePassword
+  ): Promise<void> {
     try {
       const user = await userStorage.findById(userId);
       if (!user) {
@@ -270,15 +343,20 @@ class UserService {
       }
 
       // Verify current password
-      const isCurrentPasswordValid = await verifyPassword(passwordData.currentPassword, user.password);
+      const isCurrentPasswordValid = await verifyPassword(
+        passwordData.currentPassword,
+        user.password
+      );
       if (!isCurrentPasswordValid) {
         throw new Error(ERROR_MESSAGES.CURRENT_PASSWORD_INCORRECT);
       }
 
       // Validate new password strength
-      const passwordValidation = validatePasswordStrength(passwordData.newPassword);
+      const passwordValidation = validatePasswordStrength(
+        passwordData.newPassword
+      );
       if (!passwordValidation.isValid) {
-        throw new Error(passwordValidation.errors.join(', '));
+        throw new Error(passwordValidation.errors.join(", "));
       }
 
       // Hash new password
@@ -287,7 +365,7 @@ class UserService {
       // Update password
       await userStorage.update(userId, { password: hashedPassword });
     } catch (error) {
-      console.error('Error changing password:', error);
+      console.error("Error changing password:", error);
       throw error;
     }
   }
@@ -304,7 +382,7 @@ class UserService {
 
       await userStorage.update(userId, { isActive: false });
     } catch (error) {
-      console.error('Error deactivating user:', error);
+      console.error("Error deactivating user:", error);
       throw error;
     }
   }
@@ -315,9 +393,9 @@ class UserService {
   async getAllUsers(): Promise<PublicUser[]> {
     try {
       const users = await userStorage.list();
-      return users.map(user => sanitizeUser(user));
+      return users.map((user) => sanitizeUser(user));
     } catch (error) {
-      console.error('Error getting all users:', error);
+      console.error("Error getting all users:", error);
       return [];
     }
   }
