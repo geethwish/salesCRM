@@ -49,7 +49,7 @@ const UserModel = jest.fn().mockImplementation((data) => {
 });
 
 // Static helpers
-UserModel.find = jest.fn().mockImplementation(async (query = {}) => {
+UserModel.find = jest.fn().mockImplementation(async () => {
   // Very basic support: return all users
   return Array.from(mockUsers.values());
 });
@@ -67,6 +67,7 @@ UserModel.findOne = jest.fn().mockImplementation((query = {}) => {
   }
   // Support chaining with .select('+password') used in login flow
   const result = found || null;
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
   result && (result.select = jest.fn().mockResolvedValue(result));
   return result;
 });

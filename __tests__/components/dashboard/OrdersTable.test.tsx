@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { OrdersTable } from '@/components/dashboard/OrdersTable';
 import { Order } from '@/lib/types/order';
@@ -11,10 +11,10 @@ import { Order } from '@/lib/types/order';
 // Mock framer-motion
 jest.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    tr: ({ children, ...props }: any) => <tr {...props}>{children}</tr>,
+    div: 'div',
+    tr: 'tr',
   },
-  AnimatePresence: ({ children }: any) => <>{children}</>,
+  AnimatePresence: 'div',
 }));
 
 // Mock lucide-react icons
@@ -318,17 +318,20 @@ describe('OrdersTable Component', () => {
   });
 
   describe('Status Badge Component', () => {
-    const statusTests = [
-      { status: 'pending', expectedClass: 'bg-yellow-100 text-yellow-800' },
-      { status: 'processing', expectedClass: 'bg-blue-100 text-blue-800' },
-      { status: 'shipped', expectedClass: 'bg-purple-100 text-purple-800' },
-      { status: 'delivered', expectedClass: 'bg-green-100 text-green-800' },
-      { status: 'cancelled', expectedClass: 'bg-red-100 text-red-800' },
-    ];
+    const statusTests: Array<{
+      status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+      expectedClass: string;
+    }> = [
+        { status: 'pending', expectedClass: 'bg-yellow-100 text-yellow-800' },
+        { status: 'processing', expectedClass: 'bg-blue-100 text-blue-800' },
+        { status: 'shipped', expectedClass: 'bg-purple-100 text-purple-800' },
+        { status: 'delivered', expectedClass: 'bg-green-100 text-green-800' },
+        { status: 'cancelled', expectedClass: 'bg-red-100 text-red-800' },
+      ];
 
     statusTests.forEach(({ status, expectedClass }) => {
       it(`renders ${status} status with correct styling`, () => {
-        const orderWithStatus = [{ ...mockOrders[0], status }];
+        const orderWithStatus: Order[] = [{ ...mockOrders[0], status }];
         render(<OrdersTable {...defaultProps} orders={orderWithStatus} />);
 
         const statusBadge = screen.getByText(status.charAt(0).toUpperCase() + status.slice(1));
@@ -337,7 +340,11 @@ describe('OrdersTable Component', () => {
     });
 
     it('handles unknown status with default styling', () => {
-      const orderWithUnknownStatus = [{ ...mockOrders[0], status: 'unknown' as any }];
+      // Create an order with an unknown status by bypassing TypeScript checking for this test case
+      const orderWithUnknownStatus = [{
+        ...mockOrders[0],
+        status: 'unknown'
+      } as unknown as Order];
       render(<OrdersTable {...defaultProps} orders={orderWithUnknownStatus} />);
 
       const statusBadge = screen.getByText('Unknown');

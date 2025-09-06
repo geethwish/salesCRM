@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -47,7 +47,7 @@ describe('RegisterForm', () => {
 
   it('should call register API on form submission', async () => {
     const user = userEvent.setup();
-    
+
     render(<RegisterForm />);
 
     const nameInput = screen.getByPlaceholderText(/enter your full name/i);
@@ -55,13 +55,13 @@ describe('RegisterForm', () => {
     const passwordInput = screen.getByPlaceholderText(/create a password/i);
     const confirmPasswordInput = screen.getByPlaceholderText(/confirm your password/i);
     const termsCheckbox = screen.getByRole('checkbox', { name: /i agree to the/i });
-    
+
     await user.type(nameInput, 'Test User');
     await user.type(emailInput, 'test@example.com');
     await user.type(passwordInput, 'Password123!');
     await user.type(confirmPasswordInput, 'Password123!');
     await user.click(termsCheckbox);
-    
+
     const submitButton = screen.getByRole('button', { name: /sign up/i });
     await user.click(submitButton);
 
