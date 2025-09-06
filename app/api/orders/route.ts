@@ -7,7 +7,7 @@ import {
 } from "@/lib/utils/validation";
 import { authenticateRequest } from "@/lib/utils/auth";
 import { withApiMiddleware } from "@/lib/middleware/apiMiddleware";
-import { HTTP_STATUS, ERROR_MESSAGES, SUCCESS_MESSAGES } from "@/lib/constants";
+import { HTTP_STATUS, ERROR_MESSAGES } from "@/lib/constants";
 
 /**
  * @swagger

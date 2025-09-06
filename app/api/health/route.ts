@@ -1,25 +1,29 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { checkDatabaseHealth, getConnectionStatus } from '@/lib/database/connection';
-import { ApiResponse } from '@/lib/types/order';
-import { HTTP_STATUS } from '@/lib/constants';
+import { NextResponse } from "next/server";
+import {
+  checkDatabaseHealth,
+  getConnectionStatus,
+} from "@/lib/database/connection";
+import { ApiResponse } from "@/lib/types/order";
+import { HTTP_STATUS } from "@/lib/constants";
 
 /**
  * GET /api/health - Health check endpoint
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Check database health
     const dbHealth = await checkDatabaseHealth();
     const connectionStatus = getConnectionStatus();
-    
+
     // Determine overall health status
-    const isHealthy = dbHealth.status === 'healthy' && connectionStatus.isConnected;
-    
+    const isHealthy =
+      dbHealth.status === "healthy" && connectionStatus.isConnected;
+
     const healthData = {
-      status: isHealthy ? 'healthy' : 'unhealthy',
+      status: isHealthy ? "healthy" : "unhealthy",
       timestamp: new Date().toISOString(),
-      version: process.env.npm_package_version || '1.0.0',
-      environment: process.env.NODE_ENV || 'development',
+      version: process.env.npm_package_version || "1.0.0",
+      environment: process.env.NODE_ENV || "development",
       database: {
         status: dbHealth.status,
         connected: dbHealth.details.connected,
@@ -44,7 +48,9 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    const statusCode = isHealthy ? HTTP_STATUS.OK : HTTP_STATUS.SERVICE_UNAVAILABLE;
+    const statusCode = isHealthy
+      ? HTTP_STATUS.OK
+      : HTTP_STATUS.SERVICE_UNAVAILABLE;
 
     return NextResponse.json(
       {
@@ -54,13 +60,13 @@ export async function GET(request: NextRequest) {
       { status: statusCode }
     );
   } catch (error) {
-    console.error('Health check failed:', error);
-    
+    console.error("Health check failed:", error);
+
     return NextResponse.json(
       {
         success: false,
         data: {
-          status: 'unhealthy',
+          status: "unhealthy",
           timestamp: new Date().toISOString(),
           error: (error as Error).message,
         },
@@ -78,8 +84,8 @@ export async function POST() {
     {
       success: false,
       error: {
-        error: 'METHOD_NOT_ALLOWED',
-        message: 'POST method not allowed on health check endpoint',
+        error: "METHOD_NOT_ALLOWED",
+        message: "POST method not allowed on health check endpoint",
         statusCode: HTTP_STATUS.METHOD_NOT_ALLOWED,
       },
     } as ApiResponse,
@@ -92,8 +98,8 @@ export async function PUT() {
     {
       success: false,
       error: {
-        error: 'METHOD_NOT_ALLOWED',
-        message: 'PUT method not allowed on health check endpoint',
+        error: "METHOD_NOT_ALLOWED",
+        message: "PUT method not allowed on health check endpoint",
         statusCode: HTTP_STATUS.METHOD_NOT_ALLOWED,
       },
     } as ApiResponse,
@@ -106,8 +112,8 @@ export async function DELETE() {
     {
       success: false,
       error: {
-        error: 'METHOD_NOT_ALLOWED',
-        message: 'DELETE method not allowed on health check endpoint',
+        error: "METHOD_NOT_ALLOWED",
+        message: "DELETE method not allowed on health check endpoint",
         statusCode: HTTP_STATUS.METHOD_NOT_ALLOWED,
       },
     } as ApiResponse,

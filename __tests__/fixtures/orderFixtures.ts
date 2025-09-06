@@ -2,7 +2,7 @@
  * Test fixtures for orders
  */
 
-import { Order, OrderCategory, OrderSource } from "@/lib/types/order";
+import { OrderCategory, OrderSource } from "@/lib/types/order";
 
 /**
  * Sample order data for testing

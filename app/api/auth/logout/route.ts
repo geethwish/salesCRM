@@ -1,11 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { ApiResponse } from '@/lib/types/order';
-import { withApiMiddleware } from '@/lib/middleware/apiMiddleware';
-import { 
-  HTTP_STATUS, 
-  SUCCESS_MESSAGES,
-  COOKIE_CONFIG 
-} from '@/lib/constants';
+import { NextResponse } from "next/server";
+import { ApiResponse } from "@/lib/types/order";
+import { withApiMiddleware } from "@/lib/middleware/apiMiddleware";
+import { HTTP_STATUS, SUCCESS_MESSAGES, COOKIE_CONFIG } from "@/lib/constants";
 
 /**
  * @swagger
@@ -34,7 +30,7 @@ import {
  *       500:
  *         description: Internal server error
  */
-async function logoutHandler(request: NextRequest): Promise<NextResponse> {
+async function logoutHandler(): Promise<NextResponse> {
   try {
     // Create response
     const response = NextResponse.json(
@@ -54,20 +50,19 @@ async function logoutHandler(request: NextRequest): Promise<NextResponse> {
       maxAge: 0, // Expire immediately
     };
 
-    response.cookies.set(COOKIE_CONFIG.AUTH_TOKEN, '', cookieOptions);
-    response.cookies.set(COOKIE_CONFIG.REMEMBER_ME, '', cookieOptions);
+    response.cookies.set(COOKIE_CONFIG.AUTH_TOKEN, "", cookieOptions);
+    response.cookies.set(COOKIE_CONFIG.REMEMBER_ME, "", cookieOptions);
 
     return response;
-
   } catch (error) {
-    console.error('Logout error:', error);
+    console.error("Logout error:", error);
 
     return NextResponse.json(
       {
         success: false,
         error: {
-          error: 'Logout Error',
-          message: 'Failed to logout. Please try again.',
+          error: "Logout Error",
+          message: "Failed to logout. Please try again.",
           statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
         },
       } as ApiResponse,

@@ -1,11 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import swaggerUi from "swagger-ui-express";
-import { swaggerSpec } from "@/lib/swagger/config";
+import { NextResponse } from "next/server";
 
 /**
  * GET /api/docs - Serve Swagger UI documentation
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Generate simple HTML documentation page with Swagger UI
     const html = `
