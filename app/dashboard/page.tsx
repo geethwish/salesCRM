@@ -61,7 +61,7 @@ function DashboardContent() {
   const handleFiltersChange = (newFilters: FilterValues) => {
     dispatch(setFilters(newFilters));
     dispatch(fetchOrders({
-      page: 1, // Reset to first page when filters change
+      page: 1,
       limit: pagination.limit,
       ...filters,
       ...newFilters

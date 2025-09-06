@@ -40,23 +40,15 @@ function getDBName(): string {
 // Connection options for production-ready setup
 const connectionOptions: mongoose.ConnectOptions = {
   // Connection pool settings
-  maxPoolSize: 10, // Maximum number of connections in the pool
-  minPoolSize: 2, // Minimum number of connections in the pool
-  maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
-
-  // Timeout settings
+  maxPoolSize: 10,
+  minPoolSize: 2,
+  maxIdleTimeMS: 30000,
   serverSelectionTimeoutMS: CONNECTION_TIMEOUT_MS,
   socketTimeoutMS: 45000,
   connectTimeoutMS: CONNECTION_TIMEOUT_MS,
-
-  // Retry settings
   retryWrites: true,
   retryReads: true,
-
-  // Buffer settings
   bufferCommands: false, // Disable mongoose buffering
-
-  // Other settings
   autoIndex: process.env.NODE_ENV !== "production", // Build indexes in development only
   autoCreate: true, // Automatically create collections
 };

@@ -67,6 +67,11 @@ export const loginUser = createAsyncThunk(
       if (data.success && data.data) {
         const { user, token } = data.data;
 
+        // Store token in localStorage for compatibility with existing tests and components
+        if (typeof window !== "undefined") {
+          localStorage.setItem("auth-token", token);
+        }
+
         // Show success toast
         ToastModule.authToasts.loginSuccess(user.name);
 
@@ -96,6 +101,11 @@ export const registerUser = createAsyncThunk(
       if (data.success && data.data) {
         const { user, token } = data.data;
 
+        // Store token in localStorage for compatibility with existing tests and components
+        if (typeof window !== "undefined") {
+          localStorage.setItem("auth-token", token);
+        }
+
         // Show success toast
         ToastModule.authToasts.registerSuccess(user.name);
 
@@ -124,6 +134,11 @@ export const logoutUser = createAsyncThunk(
       // Call logout API if needed
       await authApi.logout();
 
+      // Remove token from localStorage for compatibility with existing tests and components
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("auth-token");
+      }
+
       // Show success toast
       ToastModule.authToasts.logoutSuccess();
 
@@ -131,6 +146,10 @@ export const logoutUser = createAsyncThunk(
     } catch (error: any) {
       console.error("Logout error:", error);
       // Even if API call fails, we should still logout locally
+      // Remove token from localStorage
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("auth-token");
+      }
       ToastModule.authToasts.logoutSuccess();
       return null;
     }
@@ -235,6 +254,11 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.isLoading = false;
         state.error = action.payload as string;
+
+        // Clear token from localStorage when auth check fails
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("auth-token");
+        }
       });
 
     // Login

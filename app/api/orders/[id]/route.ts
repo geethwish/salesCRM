@@ -5,9 +5,9 @@ import { validateRequestBody, isValidUUID } from "@/lib/utils/validation";
 import { HTTP_STATUS, ERROR_MESSAGES } from "@/lib/constants";
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 /**
@@ -75,7 +75,7 @@ interface RouteParams {
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Validate order ID format
     if (!isValidUUID(id)) {
@@ -117,7 +117,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       { status: HTTP_STATUS.OK }
     );
   } catch (error) {
-    console.error(`GET /api/orders/${params.id} error:`, error);
+    const resolvedParams = await params;
+    console.error(`GET /api/orders/${resolvedParams.id} error:`, error);
 
     return NextResponse.json(
       {
@@ -138,7 +139,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Validate order ID format
     if (!isValidUUID(id)) {
@@ -195,7 +196,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       { status: HTTP_STATUS.OK }
     );
   } catch (error) {
-    console.error(`PUT /api/orders/${params.id} error:`, error);
+    const resolvedParams = await params;
+    console.error(`PUT /api/orders/${resolvedParams.id} error:`, error);
 
     return NextResponse.json(
       {
@@ -216,7 +218,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Validate order ID format
     if (!isValidUUID(id)) {
@@ -258,7 +260,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       { status: HTTP_STATUS.OK }
     );
   } catch (error) {
-    console.error(`DELETE /api/orders/${params.id} error:`, error);
+    const resolvedParams = await params;
+    console.error(`DELETE /api/orders/${resolvedParams.id} error:`, error);
 
     return NextResponse.json(
       {

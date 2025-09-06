@@ -134,11 +134,12 @@ export function OrdersFilter({ filters, onFiltersChange, onClearFilters, loading
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Category Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label htmlFor="category-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <Package className="inline h-4 w-4 mr-1" />
                   Category
                 </label>
                 <select
+                  id="category-filter"
                   value={localFilters.category || ''}
                   onChange={(e) => handleFilterChange('category', e.target.value)}
                   disabled={loading}
@@ -155,11 +156,12 @@ export function OrdersFilter({ filters, onFiltersChange, onClearFilters, loading
 
               {/* Source Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label htmlFor="source-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <Smartphone className="inline h-4 w-4 mr-1" />
                   Source
                 </label>
                 <select
+                  id="source-filter"
                   value={localFilters.source || ''}
                   onChange={(e) => handleFilterChange('source', e.target.value)}
                   disabled={loading}
@@ -176,11 +178,12 @@ export function OrdersFilter({ filters, onFiltersChange, onClearFilters, loading
 
               {/* Location Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label htmlFor="location-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <MapPin className="inline h-4 w-4 mr-1" />
                   Location
                 </label>
                 <select
+                  id="location-filter"
                   value={localFilters.geo || ''}
                   onChange={(e) => handleFilterChange('geo', e.target.value)}
                   disabled={loading}
@@ -197,11 +200,12 @@ export function OrdersFilter({ filters, onFiltersChange, onClearFilters, loading
 
               {/* Date Range - From */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label htmlFor="date-from-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <Calendar className="inline h-4 w-4 mr-1" />
                   Date From
                 </label>
                 <input
+                  id="date-from-filter"
                   type="date"
                   value={localFilters.dateFrom || ''}
                   onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
@@ -212,11 +216,12 @@ export function OrdersFilter({ filters, onFiltersChange, onClearFilters, loading
 
               {/* Date Range - To */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label htmlFor="date-to-filter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   <Calendar className="inline h-4 w-4 mr-1" />
                   Date To
                 </label>
                 <input
+                  id="date-to-filter"
                   type="date"
                   value={localFilters.dateTo || ''}
                   onChange={(e) => handleFilterChange('dateTo', e.target.value)}

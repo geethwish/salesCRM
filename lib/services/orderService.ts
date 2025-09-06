@@ -17,9 +17,6 @@ import {
 } from "@/lib/database/utils";
 import OrderModel, { IOrder } from "@/lib/models/Order";
 
-/**
- * MongoDB-based data store for orders
- */
 class OrderService {
   private cache: Map<string, { data: any; timestamp: number; ttl: number }> =
     new Map();
@@ -31,9 +28,6 @@ class OrderService {
     this.initializeDatabase();
   }
 
-  /**
-   * Initialize database connection
-   */
   private async initializeDatabase(): Promise<void> {
     try {
       await connectToDatabase();

@@ -7,26 +7,29 @@ const createJestConfig = nextJest({
 
 const customJestConfig = {
   setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
-  testEnvironment: "jsdom", // Use jsdom for React component tests
+  testEnvironment: "jsdom",
   moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/$1", // Fix path mapping for project root
+    "^@/(.*)$": "<rootDir>/$1",
+    "^bson$": "<rootDir>/__mocks__/bson.js",
+    "^mongodb$": "<rootDir>/__mocks__/mongodb.js",
+    "^mongoose$": "<rootDir>/__mocks__/mongoose.js",
+    "^uuid$": "<rootDir>/__mocks__/uuid.js",
+    "^@/lib/models/User$": "<rootDir>/__mocks__/UserModel.js",
+    "^@/lib/models/Order$": "<rootDir>/__mocks__/OrderModel.js",
   },
   testPathIgnorePatterns: ["<rootDir>/.next/", "<rootDir>/node_modules/"],
-  moduleDirectories: ["node_modules", "<rootDir>/"],
-  // Use different environments for different test types
-  projects: [
-    {
-      displayName: "jsdom",
-      testEnvironment: "jsdom",
-      testMatch: ["<rootDir>/__tests__/**/*.(test|spec).(ts|tsx)"],
-      setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
-    },
-    {
-      displayName: "node",
-      testEnvironment: "node",
-      testMatch: ["<rootDir>/__tests__/**/*.api.(test|spec).(ts|tsx)"],
-      setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
-    },
+  testMatch: [
+    "**/__tests__/**/*.test.{js,jsx,ts,tsx}",
+    "**/?(*.)+(spec|test).{js,jsx,ts,tsx}",
+  ],
+  collectCoverageFrom: [
+    "**/*.{js,jsx,ts,tsx}",
+    "!**/*.d.ts",
+    "!**/node_modules/**",
+    "!**/.next/**",
+    "!**/coverage/**",
+    "!jest.config.js",
+    "!jest.setup.js",
   ],
 };
 

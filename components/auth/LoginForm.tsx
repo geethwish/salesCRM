@@ -59,16 +59,13 @@ export function LoginForm({
       };
 
       await login(loginData);
-      // Redirect will happen automatically via AuthContext
     } catch (error) {
-      // Error is handled by the auth context
       console.error('Login failed:', error);
     }
   };
 
   return (
     <div className={`w-full max-w-sm mx-auto ${className}`}>
-      {/* Clean, minimal container matching the design */}
       <div className="bg-background p-8 rounded-3xl border-2 border-border shadow-xl transition-all duration-200">
         {/* Header Section */}
         <div className="mb-8 text-center">
@@ -82,7 +79,6 @@ export function LoginForm({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Email Field - Matching Design */}
             <FormFieldTransition delay={0.1}>
               <FormField
                 control={form.control}
@@ -110,7 +106,6 @@ export function LoginForm({
               />
             </FormFieldTransition>
 
-            {/* Password Field - Matching Design */}
             <FormFieldTransition delay={0.2}>
               <FormField
                 control={form.control}
@@ -182,15 +177,12 @@ export function LoginForm({
                 Forgot password?
               </Button>
             </div>
-
-            {/* Error Message - Enhanced Design */}
             {error && (
               <div className="bg-destructive/10 border-2 border-destructive/20 rounded-2xl p-4 transition-colors duration-200">
                 <p className="text-base text-destructive font-medium transition-colors duration-200">{error}</p>
               </div>
             )}
 
-            {/* Submit Button - Brand Color #01257D */}
             <FormFieldTransition delay={0.4}>
               <Button
                 type="submit"
@@ -232,7 +224,6 @@ export function LoginForm({
           </form>
         </Form>
 
-        {/* Switch to Register - Matching Design */}
         {onSwitchToRegister && (
           <div className="mt-8 text-center">
             <p className="text-lg text-foreground transition-colors duration-200">

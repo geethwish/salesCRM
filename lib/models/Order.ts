@@ -12,6 +12,7 @@ export interface IOrder extends Omit<OrderInterface, "id">, Document {
   userId: mongoose.Types.ObjectId; // Reference to the user who owns this order
   createdAt: Date;
   updatedAt: Date;
+  toAPIResponse(): OrderInterface; // Instance method to convert to API format
 }
 
 // Order schema definition

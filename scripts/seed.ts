@@ -1,5 +1,3 @@
-#!/usr/bin/env tsx
-
 // Load environment variables from .env.local FIRST
 import { config } from "dotenv";
 import { resolve } from "path";
@@ -7,7 +5,6 @@ import { resolve } from "path";
 // Load .env.local file before importing any modules that use env vars
 config({ path: resolve(process.cwd(), ".env.local") });
 
-// Now import modules that depend on environment variables
 import { OrderCategory, OrderSource } from "@/lib/types/order";
 
 /**

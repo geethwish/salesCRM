@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
-import { RegisterRequest } from '@/lib/types/auth';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { validatePasswordStrength } from '@/lib/utils/auth';
 import { registerSchema, type RegisterFormData } from '@/lib/schemas/auth';
@@ -92,7 +91,6 @@ export function RegisterForm({
         confirmPassword: data.confirmPassword,
         acceptTerms: data.acceptTerms,
       });
-      // Redirect will happen automatically via useEffect
     } catch (error) {
       // Error is handled by the auth context
       console.error('Registration failed:', error);
@@ -101,7 +99,6 @@ export function RegisterForm({
 
   return (
     <div className={`w-full max-w-sm mx-auto ${className}`}>
-      {/* Clean, minimal container matching the LoginForm design */}
       <div className="bg-background p-8 rounded-3xl border-2 border-border shadow-xl transition-all duration-200">
         {/* Header Section */}
         <div className="mb-8 text-center">
@@ -115,7 +112,6 @@ export function RegisterForm({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Name Field - Matching LoginForm Design */}
             <FormFieldTransition delay={0.1}>
               <FormField
                 control={form.control}
@@ -140,8 +136,6 @@ export function RegisterForm({
                 )}
               />
             </FormFieldTransition>
-
-            {/* Email Field - Matching LoginForm Design */}
             <FormFieldTransition delay={0.2}>
               <FormField
                 control={form.control}
@@ -166,8 +160,6 @@ export function RegisterForm({
                 )}
               />
             </FormFieldTransition>
-
-            {/* Password Field - Matching LoginForm Design */}
             <FormFieldTransition delay={0.3}>
               <FormField
                 control={form.control}
@@ -208,8 +200,6 @@ export function RegisterForm({
                 )}
               />
             </FormFieldTransition>
-
-            {/* Password Strength Indicator - Enhanced Design */}
             {watchedPassword && (
               <div className="mt-2 p-3 bg-muted/50 rounded-xl border border-border transition-colors duration-200">
                 <div className="text-sm font-medium text-foreground mb-2">Password requirements:</div>
@@ -234,7 +224,6 @@ export function RegisterForm({
               </div>
             )}
 
-            {/* Confirm Password Field - Matching LoginForm Design */}
             <FormFieldTransition delay={0.4}>
               <FormField
                 control={form.control}
@@ -276,7 +265,6 @@ export function RegisterForm({
               />
             </FormFieldTransition>
 
-            {/* Terms Acceptance - Matching LoginForm Design */}
             <FormFieldTransition delay={0.5}>
               <FormField
                 control={form.control}
@@ -317,14 +305,12 @@ export function RegisterForm({
               />
             </FormFieldTransition>
 
-            {/* Error Message - Enhanced Design */}
             {error && (
               <div className="bg-destructive/10 border-2 border-destructive/20 rounded-2xl p-4 transition-colors duration-200">
                 <p className="text-base text-destructive font-medium transition-colors duration-200">{error}</p>
               </div>
             )}
 
-            {/* Submit Button - Brand Color #01257D */}
             <FormFieldTransition delay={0.6}>
               <Button
                 type="submit"
@@ -366,7 +352,6 @@ export function RegisterForm({
           </form>
         </Form>
 
-        {/* Switch to Login - Matching LoginForm Design */}
         {onSwitchToLogin && (
           <div className="mt-8 text-center">
             <p className="text-lg text-foreground transition-colors duration-200">

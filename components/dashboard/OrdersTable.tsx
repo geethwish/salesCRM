@@ -2,10 +2,10 @@
 
 import React from 'react';
 import { Order } from '@/lib/types/order';
-import { 
-  ChevronUp, 
-  ChevronDown, 
-  ChevronLeft, 
+import {
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
   ChevronRight,
   Edit,
   Trash2,
@@ -25,9 +25,9 @@ interface TableHeaderProps {
 
 function TableHeader({ label, sortKey, currentSort, sortOrder, onSort }: TableHeaderProps) {
   const isActive = currentSort === sortKey;
-  
+
   return (
-    <th 
+    <th
       className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
       onClick={() => onSort(sortKey)}
     >
@@ -159,7 +159,7 @@ export function OrdersTable({
   if (loading) {
     return (
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700">
-        <div className="animate-pulse">
+        <div className="animate-pulse" data-testid="loading-skeleton">
           <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-t-lg"></div>
           {[...Array(5)].map((_, i) => (
             <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700"></div>
@@ -318,7 +318,7 @@ export function OrdersTable({
           </tbody>
         </table>
       </div>
-      
+
       {orders.length > 0 && (
         <Pagination
           currentPage={pagination.page}

@@ -12,10 +12,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
-  Area,
-  AreaChart,
 } from 'recharts';
 import { motion } from 'framer-motion';
 
@@ -32,7 +28,7 @@ function ChartContainer({ title, children, loading = false, className = '' }: Ch
     return (
       <div className={`bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-6 ${className}`}>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{title}</h3>
-        <div className="animate-pulse">
+        <div className="animate-pulse" data-testid="loading-skeleton">
           <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded"></div>
         </div>
       </div>
@@ -137,7 +133,7 @@ export function SourceChart({ data, loading = false }: SourceChartProps) {
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+            label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
             outerRadius={80}
             fill="#8884d8"
             dataKey="value"
@@ -162,11 +158,11 @@ interface LocationChartProps {
 export function LocationChart({ data, loading = false }: LocationChartProps) {
   const chartData = Object.entries(data || {})
     .sort(([, a], [, b]) => b - a)
-    .slice(0, 25) // Show top 25 locations to match the reference image
+    .slice(0, 25)
     .map(([name, value]) => ({
       name,
       value,
-      soldCount: value, // For tooltip display
+      soldCount: value,
     }));
 
   // Custom tooltip for location chart
@@ -227,7 +223,6 @@ export function LocationChart({ data, loading = false }: LocationChartProps) {
   );
 }
 
-// Combined charts component
 interface ChartsProps {
   stats: {
     total: number;
