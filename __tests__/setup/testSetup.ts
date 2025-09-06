@@ -2,8 +2,9 @@
  * Test setup utilities and configurations
  */
 
-import { orderService } from '@/lib/services/orderService';
-import { sampleOrderData, scenarioTestData } from '../fixtures/orderFixtures';
+import { orderService } from "@/lib/services/orderService";
+import { sampleOrderData, scenarioTestData } from "../fixtures/orderFixtures";
+import { Order, OrderListResponse } from "@/lib/types/order";
 
 /**
  * Database setup utilities
@@ -21,7 +22,7 @@ export class TestDatabaseSetup {
    */
   static async seedSampleData(): Promise<void> {
     await this.clearDatabase();
-    
+
     for (const orderData of sampleOrderData) {
       await orderService.createOrder(orderData);
     }
@@ -30,9 +31,11 @@ export class TestDatabaseSetup {
   /**
    * Seed database with specific scenario data
    */
-  static async seedScenarioData(scenario: keyof typeof scenarioTestData): Promise<void> {
+  static async seedScenarioData(
+    scenario: keyof typeof scenarioTestData
+  ): Promise<void> {
     await this.clearDatabase();
-    
+
     const data = scenarioTestData[scenario];
     for (const orderData of data) {
       await orderService.createOrder(orderData);
@@ -42,9 +45,9 @@ export class TestDatabaseSetup {
   /**
    * Seed database with custom data
    */
-  static async seedCustomData(orders: any[]): Promise<void> {
+  static async seedCustomData(orders: Partial<Order>[]): Promise<void> {
     await this.clearDatabase();
-    
+
     for (const orderData of orders) {
       await orderService.createOrder(orderData);
     }
@@ -56,7 +59,7 @@ export class TestDatabaseSetup {
   static async getDatabaseState() {
     const count = await orderService.getOrderCount();
     const stats = await orderService.getOrderStats();
-    
+
     return {
       count,
       stats,
@@ -70,10 +73,10 @@ export class TestDatabaseSetup {
 export const testConfig = {
   // API endpoints
   endpoints: {
-    orders: '/api/orders',
+    orders: "/api/orders",
     orderById: (id: string) => `/api/orders/${id}`,
-    orderStats: '/api/orders/stats',
-    seed: '/api/seed',
+    orderStats: "/api/orders/stats",
+    seed: "/api/seed",
   },
 
   // Test timeouts
@@ -92,7 +95,7 @@ export const testConfig = {
   },
 
   // Test URLs
-  baseUrl: 'http://localhost:3001',
+  baseUrl: "http://localhost:3001",
 };
 
 /**
@@ -107,12 +110,20 @@ export class TestAssertions {
     expected: Date | string,
     toleranceMs: number = 1000
   ): void {
-    const actualTime = typeof actual === 'string' ? new Date(actual).getTime() : actual.getTime();
-    const expectedTime = typeof expected === 'string' ? new Date(expected).getTime() : expected.getTime();
+    const actualTime =
+      typeof actual === "string"
+        ? new Date(actual).getTime()
+        : actual.getTime();
+    const expectedTime =
+      typeof expected === "string"
+        ? new Date(expected).getTime()
+        : expected.getTime();
     const diff = Math.abs(actualTime - expectedTime);
-    
+
     if (diff > toleranceMs) {
-      throw new Error(`Dates are not approximately equal. Difference: ${diff}ms, Tolerance: ${toleranceMs}ms`);
+      throw new Error(
+        `Dates are not approximately equal. Difference: ${diff}ms, Tolerance: ${toleranceMs}ms`
+      );
     }
   }
 
@@ -122,19 +133,27 @@ export class TestAssertions {
   static assertArraySortedBy<T>(
     array: T[],
     field: keyof T,
-    order: 'asc' | 'desc' = 'asc'
+    order: "asc" | "desc" = "asc"
   ): void {
     for (let i = 1; i < array.length; i++) {
       const current = array[i][field];
       const previous = array[i - 1][field];
-      
-      if (order === 'asc') {
+
+      if (order === "asc") {
         if (current < previous) {
-          throw new Error(`Array is not sorted in ascending order by ${String(field)}. Item ${i}: ${current} < ${previous}`);
+          throw new Error(
+            `Array is not sorted in ascending order by ${String(
+              field
+            )}. Item ${i}: ${current} < ${previous}`
+          );
         }
       } else {
         if (current > previous) {
-          throw new Error(`Array is not sorted in descending order by ${String(field)}. Item ${i}: ${current} > ${previous}`);
+          throw new Error(
+            `Array is not sorted in descending order by ${String(
+              field
+            )}. Item ${i}: ${current} > ${previous}`
+          );
         }
       }
     }
@@ -144,41 +163,63 @@ export class TestAssertions {
    * Assert that pagination object has correct structure and values
    */
   static assertPaginationValid(
-    pagination: any,
+    pagination: OrderListResponse["pagination"],
     expectedPage: number,
     expectedLimit: number,
     expectedTotal: number
   ): void {
-    expect(pagination).toHaveProperty('page', expectedPage);
-    expect(pagination).toHaveProperty('limit', expectedLimit);
-    expect(pagination).toHaveProperty('total', expectedTotal);
-    expect(pagination).toHaveProperty('totalPages', Math.ceil(expectedTotal / expectedLimit));
-    expect(pagination).toHaveProperty('hasNext', expectedPage < Math.ceil(expectedTotal / expectedLimit));
-    expect(pagination).toHaveProperty('hasPrev', expectedPage > 1);
+    expect(pagination).toHaveProperty("page", expectedPage);
+    expect(pagination).toHaveProperty("limit", expectedLimit);
+    expect(pagination).toHaveProperty("total", expectedTotal);
+    expect(pagination).toHaveProperty(
+      "totalPages",
+      Math.ceil(expectedTotal / expectedLimit)
+    );
+    expect(pagination).toHaveProperty(
+      "hasNext",
+      expectedPage < Math.ceil(expectedTotal / expectedLimit)
+    );
+    expect(pagination).toHaveProperty("hasPrev", expectedPage > 1);
   }
 
   /**
    * Assert that statistics object has correct structure
    */
-  static assertStatisticsValid(stats: any): void {
-    expect(stats).toHaveProperty('total');
-    expect(stats).toHaveProperty('byCategory');
-    expect(stats).toHaveProperty('bySource');
-    expect(stats).toHaveProperty('byLocation');
-    expect(stats).toHaveProperty('totalAmount');
-    expect(stats).toHaveProperty('averageAmount');
+  static assertStatisticsValid(stats: {
+    total: number;
+    byCategory: Record<string, number>;
+    bySource: Record<string, number>;
+    byLocation: Record<string, number>;
+    totalAmount: number;
+    averageAmount: number;
+  }): void {
+    expect(stats).toHaveProperty("total");
+    expect(stats).toHaveProperty("byCategory");
+    expect(stats).toHaveProperty("bySource");
+    expect(stats).toHaveProperty("byLocation");
+    expect(stats).toHaveProperty("totalAmount");
+    expect(stats).toHaveProperty("averageAmount");
 
-    expect(typeof stats.total).toBe('number');
-    expect(typeof stats.byCategory).toBe('object');
-    expect(typeof stats.bySource).toBe('object');
-    expect(typeof stats.byLocation).toBe('object');
-    expect(typeof stats.totalAmount).toBe('number');
-    expect(typeof stats.averageAmount).toBe('number');
+    expect(typeof stats.total).toBe("number");
+    expect(typeof stats.byCategory).toBe("object");
+    expect(typeof stats.bySource).toBe("object");
+    expect(typeof stats.byLocation).toBe("object");
+    expect(typeof stats.totalAmount).toBe("number");
+    expect(typeof stats.averageAmount).toBe("number");
 
     // Verify totals match
-    const categoryTotal = Object.values(stats.byCategory).reduce((sum: number, count: any) => sum + count, 0);
-    const sourceTotal = Object.values(stats.bySource).reduce((sum: number, count: any) => sum + count, 0);
-    const locationTotal = Object.values(stats.byLocation).reduce((sum: number, count: any) => sum + count, 0);
+    const categoryTotal = Object.values(stats.byCategory).reduce(
+      (sum: number, count: number) => sum + count,
+      0
+    );
+    const sourceTotal = Object.values(stats.bySource).reduce(
+      (sum: number, count: number) => sum + count,
+      0
+    );
+    const locationTotal = Object.values(stats.byLocation).reduce(
+      (sum: number, count: number) => sum + count,
+      0
+    );
 
     expect(categoryTotal).toBe(stats.total);
     expect(sourceTotal).toBe(stats.total);
@@ -199,12 +240,14 @@ export class PerformanceTestUtils {
   /**
    * Measure execution time of a function
    */
-  static async measureExecutionTime<T>(fn: () => Promise<T>): Promise<{ result: T; duration: number }> {
+  static async measureExecutionTime<T>(
+    fn: () => Promise<T>
+  ): Promise<{ result: T; duration: number }> {
     const startTime = performance.now();
     const result = await fn();
     const endTime = performance.now();
     const duration = endTime - startTime;
-    
+
     return { result, duration };
   }
 
@@ -214,10 +257,14 @@ export class PerformanceTestUtils {
   static assertExecutionTimeWithin(
     actualMs: number,
     maxMs: number,
-    operation: string = 'Operation'
+    operation: string = "Operation"
   ): void {
     if (actualMs > maxMs) {
-      throw new Error(`${operation} took ${actualMs.toFixed(2)}ms, expected less than ${maxMs}ms`);
+      throw new Error(
+        `${operation} took ${actualMs.toFixed(
+          2
+        )}ms, expected less than ${maxMs}ms`
+      );
     }
   }
 
@@ -242,7 +289,7 @@ export class PerformanceTestUtils {
 
     // Actual benchmark
     const times: number[] = [];
-    
+
     for (let i = 0; i < iterations; i++) {
       const { duration } = await this.measureExecutionTime(fn);
       times.push(duration);
@@ -270,16 +317,37 @@ export class TestDataGenerators {
   /**
    * Generate random order data
    */
-  static generateRandomOrder(overrides: any = {}) {
-    const categories = ['Electronics', 'Clothing', 'Books', 'Home & Garden', 'Sports'];
-    const sources = ['Online', 'Store', 'Phone', 'Mobile App', 'Social Media'];
-    const locations = ['New York', 'California', 'Texas', 'Florida', 'Illinois'];
-    const statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+  static generateRandomOrder(overrides: Partial<Order> = {}) {
+    const categories = [
+      "Electronics",
+      "Clothing",
+      "Books",
+      "Home & Garden",
+      "Sports",
+    ];
+    const sources = ["Online", "Store", "Phone", "Mobile App", "Social Media"];
+    const locations = [
+      "New York",
+      "California",
+      "Texas",
+      "Florida",
+      "Illinois",
+    ];
+    const statuses = [
+      "pending",
+      "processing",
+      "shipped",
+      "delivered",
+      "cancelled",
+    ];
 
     return {
       customer: `Customer ${Math.floor(Math.random() * 1000)}`,
       category: categories[Math.floor(Math.random() * categories.length)],
-      date: `2025-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
+      date: `2025-${String(Math.floor(Math.random() * 12) + 1).padStart(
+        2,
+        "0"
+      )}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, "0")}`,
       source: sources[Math.floor(Math.random() * sources.length)],
       geo: locations[Math.floor(Math.random() * locations.length)],
       amount: Math.round((Math.random() * 1000 + 10) * 100) / 100,
@@ -291,8 +359,10 @@ export class TestDataGenerators {
   /**
    * Generate batch of random orders
    */
-  static generateRandomOrders(count: number, overrides: any = {}) {
-    return Array.from({ length: count }, () => this.generateRandomOrder(overrides));
+  static generateRandomOrders(count: number, overrides: Partial<Order> = {}) {
+    return Array.from({ length: count }, () =>
+      this.generateRandomOrder(overrides)
+    );
   }
 }
 
@@ -305,7 +375,7 @@ export const globalTestSetup = {
    */
   async beforeAll(): Promise<void> {
     // Any global setup can go here
-    console.log('🧪 Starting test suite...');
+    console.log("🧪 Starting test suite...");
   },
 
   /**
@@ -314,7 +384,7 @@ export const globalTestSetup = {
   async afterAll(): Promise<void> {
     // Clean up any global resources
     await TestDatabaseSetup.clearDatabase();
-    console.log('🧹 Test suite cleanup completed');
+    console.log("🧹 Test suite cleanup completed");
   },
 
   /**

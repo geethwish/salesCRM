@@ -1,15 +1,13 @@
 'use client';
 
 import React from 'react';
-import { 
-  ShoppingCart, 
-  DollarSign, 
-  TrendingUp, 
-  Users,
+import {
+  ShoppingCart,
+  DollarSign,
+  TrendingUp,
   Package,
   Globe,
-  Smartphone,
-  Store
+  Smartphone
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -95,19 +93,17 @@ export function StatsCard({ title, value, change, icon, color, loading = false }
           </p>
           {change && (
             <div className="flex items-center mt-2">
-              <TrendingUp 
-                className={`h-4 w-4 mr-1 ${
-                  change.type === 'increase' 
-                    ? 'text-green-500 dark:text-green-400' 
-                    : 'text-red-500 dark:text-red-400 rotate-180'
-                }`} 
+              <TrendingUp
+                className={`h-4 w-4 mr-1 ${change.type === 'increase'
+                  ? 'text-green-500 dark:text-green-400'
+                  : 'text-red-500 dark:text-red-400 rotate-180'
+                  }`}
               />
-              <span 
-                className={`text-sm font-medium ${
-                  change.type === 'increase' 
-                    ? 'text-green-600 dark:text-green-400' 
-                    : 'text-red-600 dark:text-red-400'
-                }`}
+              <span
+                className={`text-sm font-medium ${change.type === 'increase'
+                  ? 'text-green-600 dark:text-green-400'
+                  : 'text-red-600 dark:text-red-400'
+                  }`}
               >
                 {change.value}%
               </span>
@@ -214,7 +210,7 @@ export function StatsCards({ stats, loading = false }: StatsCardsProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-      {statsData.map((stat, index) => (
+      {statsData.map((stat) => (
         <StatsCard
           key={stat.title}
           title={stat.title}

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { orderService } from "@/lib/services/orderService";
 import { ApiResponse } from "@/lib/types/order";
 import { HTTP_STATUS, ERROR_MESSAGES } from "@/lib/constants";
@@ -10,7 +10,7 @@ import OrderModel from "@/lib/models/Order";
 /**
  * POST /api/seed - Seed the database with sample data
  */
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     console.log("🌱 Starting database seeding via API...");
 

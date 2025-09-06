@@ -1,5 +1,5 @@
 // Mock for MongoDB module
-const { ObjectId } = require('./bson');
+import { ObjectId } from "./bson";
 
 const mockCollection = {
   insertOne: jest.fn(),

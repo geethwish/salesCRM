@@ -55,7 +55,7 @@ function DashboardContent() {
       limit: pagination.limit,
       ...filters
     }));
-  }, [dispatch]);
+  }, [dispatch, filters, pagination.limit, pagination.page]);
 
   // Handle filter changes
   const handleFiltersChange = (newFilters: FilterValues) => {
@@ -115,7 +115,7 @@ function DashboardContent() {
         })).unwrap()
       ]);
       toast.success('Dashboard refreshed successfully');
-    } catch (error) {
+    } catch {
       toast.error('Failed to refresh dashboard');
     } finally {
       setRefreshing(false);
@@ -127,7 +127,7 @@ function DashboardContent() {
     try {
       await exportOrdersToCSV(orders, filters);
       toast.success('Orders exported successfully');
-    } catch (error) {
+    } catch {
       toast.error('Failed to export orders');
     }
   };
@@ -141,7 +141,7 @@ function DashboardContent() {
     try {
       await exportStatsToCSV(stats);
       toast.success('Statistics exported successfully');
-    } catch (error) {
+    } catch {
       toast.error('Failed to export statistics');
     }
   };

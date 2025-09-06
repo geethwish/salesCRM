@@ -1,28 +1,28 @@
 // Mock for OrderModel
-const { ObjectId } = require('./bson');
+import { ObjectId } from "./bson";
 
 // Mock order document
 const createMockOrder = (data = {}) => ({
   _id: new ObjectId(),
-  customer: data.customer || 'Test Customer',
-  category: data.category || 'Electronics',
-  date: data.date || '2025-09-01',
-  source: data.source || 'online',
-  geo: data.geo || 'Test Location',
+  customer: data.customer || "Test Customer",
+  category: data.category || "Electronics",
+  date: data.date || "2025-09-01",
+  source: data.source || "online",
+  geo: data.geo || "Test Location",
   amount: data.amount || 100.0,
-  status: data.status || 'pending',
+  status: data.status || "pending",
   userId: data.userId || new ObjectId(),
   createdAt: data.createdAt || new Date(),
   updatedAt: data.updatedAt || new Date(),
   toObject: jest.fn().mockReturnValue({
     _id: new ObjectId(),
-    customer: data.customer || 'Test Customer',
-    category: data.category || 'Electronics',
-    date: data.date || '2025-09-01',
-    source: data.source || 'online',
-    geo: data.geo || 'Test Location',
+    customer: data.customer || "Test Customer",
+    category: data.category || "Electronics",
+    date: data.date || "2025-09-01",
+    source: data.source || "online",
+    geo: data.geo || "Test Location",
     amount: data.amount || 100.0,
-    status: data.status || 'pending',
+    status: data.status || "pending",
     userId: data.userId || new ObjectId(),
     createdAt: data.createdAt || new Date(),
     updatedAt: data.updatedAt || new Date(),

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   AuthState,
@@ -88,19 +88,19 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Helper function to extract error message from unknown error
+const getErrorMessage = (error: unknown, defaultMessage: string): string => {
+  const errorObj = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
+  return errorObj?.response?.data?.error?.message || errorObj?.message || defaultMessage;
+};
+
 // Auth provider component
 export function AuthProvider({ children }: AuthProviderProps) {
   const [state, dispatch] = useReducer(authReducer, initialState);
   const router = useRouter();
 
-
-  // Check for existing authentication on mount
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
   // Check authentication status
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = useCallback(async () => {
     try {
       dispatch({ type: 'AUTH_START' });
 
@@ -123,7 +123,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       dispatch({ type: 'AUTH_LOGOUT' });
       removeToken();
     }
-  };
+  }, [dispatch]);
+
+  // Check for existing authentication on mount
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   // Get stored token from localStorage
   const getStoredToken = (): string | null => {
@@ -174,8 +179,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         authToasts.loginError(errorMessage);
         throw new Error(errorMessage);
       }
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.error?.message || error.message || 'Login failed';
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error, 'Login failed');
       dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
       authToasts.loginError(errorMessage);
       throw error;
@@ -209,8 +214,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         authToasts.registerError(errorMessage);
         throw new Error(errorMessage);
       }
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.error?.message || error.message || 'Registration failed';
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error, 'Registration failed');
       dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
       authToasts.registerError(errorMessage);
       throw error;
@@ -252,8 +257,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         authToasts.validationError(errorMessage);
         throw new Error(errorMessage);
       }
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.error?.message || error.message || 'Profile update failed';
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error, 'Profile update failed');
       dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
       authToasts.validationError(errorMessage);
       throw error;
@@ -275,8 +280,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         authToasts.validationError(errorMessage);
         throw new Error(errorMessage);
       }
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.error?.message || error.message || 'Password change failed';
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error, 'Password change failed');
       dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
       authToasts.validationError(errorMessage);
       throw error;
@@ -367,7 +372,7 @@ export function ProtectedRoute({
               Access Denied
             </h1>
             <p className="text-gray-600">
-              You don't have permission to access this page.
+              You don&apos;t have permission to access this page.
             </p>
           </div>
         </div>

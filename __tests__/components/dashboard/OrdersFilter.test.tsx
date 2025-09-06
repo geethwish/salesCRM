@@ -11,10 +11,10 @@ import { OrdersFilter } from '@/components/dashboard/OrdersFilter';
 // Mock framer-motion
 jest.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+    div: 'div',
+    button: 'button',
   },
-  AnimatePresence: ({ children }: any) => children,
+  AnimatePresence: 'div',
 }));
 
 describe('OrdersFilter', () => {

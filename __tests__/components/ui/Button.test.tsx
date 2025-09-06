@@ -9,7 +9,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 
 // Mock @radix-ui/react-slot
 jest.mock('@radix-ui/react-slot', () => ({
-  Slot: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+  Slot: 'div',
 }));
 
 describe('Button Component', () => {

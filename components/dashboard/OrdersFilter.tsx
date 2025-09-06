@@ -51,7 +51,7 @@ export function OrdersFilter({ filters, onFiltersChange, onClearFilters, loading
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [localFilters.search]);
+  }, [localFilters.search, filters.search, localFilters, onFiltersChange]);
 
   // Check if any filters are active
   const hasActiveFilters = Object.values(filters).some(value => value && value.length > 0);

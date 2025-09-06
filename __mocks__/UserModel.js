@@ -1,5 +1,5 @@
 // Enhanced mock for UserModel with in-memory storage and basic query support
-const { ObjectId } = require("./bson");
+import { ObjectId } from "./bson";
 
 // In-memory user store
 const mockUsers = new Map(); // key: id (string), value: user doc

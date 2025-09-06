@@ -1,5 +1,5 @@
 // Mock for Mongoose module
-const { ObjectId } = require("./bson");
+import { ObjectId } from "./bson";
 
 const mockSchema = jest.fn().mockImplementation(() => ({
   add: jest.fn(),
