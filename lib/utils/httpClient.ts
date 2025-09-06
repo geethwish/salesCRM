@@ -4,6 +4,7 @@ import axios, {
   AxiosRequestConfig,
   AxiosResponse,
   AxiosError,
+  InternalAxiosRequestConfig,
 } from "axios";
 import { authToasts } from "@/lib/components/ui/Toast";
 
@@ -19,7 +20,7 @@ const httpClient: AxiosInstance = axios.create({
 
 // Request interceptor to add authentication token
 httpClient.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config: InternalAxiosRequestConfig) => {
     // Get token from localStorage if available
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("auth-token");
@@ -115,12 +116,12 @@ function handleHttpError(response: AxiosResponse) {
 
     case 404:
       // Not Found
-      authToasts.error("The requested resource was not found.");
+      authToasts.validationError("The requested resource was not found.");
       break;
 
     case 409:
       // Conflict - usually duplicate data
-      authToasts.error(errorMessage);
+      authToasts.validationError(errorMessage);
       break;
 
     case 422:
@@ -130,9 +131,7 @@ function handleHttpError(response: AxiosResponse) {
 
     case 429:
       // Too Many Requests - rate limiting
-      authToasts.error(
-        "Too many requests. Please wait a moment and try again."
-      );
+      authToasts.serverError();
       break;
 
     case 500:
@@ -145,7 +144,7 @@ function handleHttpError(response: AxiosResponse) {
 
     default:
       // Other errors
-      authToasts.error(errorMessage);
+      authToasts.serverError();
       break;
   }
 }
@@ -158,7 +157,7 @@ function handleNetworkError() {
 // Handle generic errors
 function handleGenericError(message: string) {
   console.error("Generic error:", message);
-  authToasts.error("An unexpected error occurred. Please try again.");
+  authToasts.serverError();
 }
 
 // Handle unauthorized access

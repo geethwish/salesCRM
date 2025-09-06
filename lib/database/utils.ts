@@ -28,9 +28,9 @@ export async function withDatabase<T>(
       // Check if it's a connection error that might be retryable
       const isRetryableError =
         error instanceof mongoose.Error.MongooseServerSelectionError ||
-        error instanceof mongoose.Error.MongoNetworkError ||
         (error as any).code === "ECONNRESET" ||
-        (error as any).code === "ETIMEDOUT";
+        (error as any).code === "ETIMEDOUT" ||
+        (error as any).name === "MongoNetworkError";
 
       // If it's the last attempt or not a retryable error, throw
       if (attempt === retries || !isRetryableError) {
@@ -268,7 +268,11 @@ export async function getCollectionStats(
   model: mongoose.Model<any>
 ): Promise<any> {
   return withDatabase(async () => {
-    return model.collection.stats();
+    const db = mongoose.connection.db;
+    if (!db) {
+      throw new Error("Database connection not established");
+    }
+    return db.command({ collStats: model.collection.collectionName });
   });
 }
 

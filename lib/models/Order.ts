@@ -109,8 +109,8 @@ const OrderSchema = new Schema<IOrder>(
 
     // Transform output to match API expectations
     toJSON: {
-      transform: function (doc, ret) {
-        ret.id = ret._id.toString();
+      transform: function (_doc, ret: Record<string, unknown>) {
+        ret.id = (ret._id as mongoose.Types.ObjectId).toString();
         delete ret._id;
         delete ret.__v;
         delete ret.userId; // Don't expose userId in API responses
@@ -119,8 +119,8 @@ const OrderSchema = new Schema<IOrder>(
     },
 
     toObject: {
-      transform: function (doc, ret) {
-        ret.id = ret._id.toString();
+      transform: function (_doc, ret: Record<string, unknown>) {
+        ret.id = (ret._id as mongoose.Types.ObjectId).toString();
         delete ret._id;
         delete ret.__v;
         return ret;
@@ -132,18 +132,6 @@ const OrderSchema = new Schema<IOrder>(
 // Virtual field for id (for API compatibility)
 OrderSchema.virtual("id").get(function (this: IOrder) {
   return this._id.toHexString();
-});
-
-// Ensure virtual fields are serialized
-OrderSchema.set("toJSON", {
-  virtuals: true,
-  transform: function (doc, ret) {
-    ret.id = ret._id.toString();
-    delete ret._id;
-    delete ret.__v;
-    delete ret.userId; // Don't expose userId in API responses
-    return ret;
-  },
 });
 
 // Compound indexes for performance

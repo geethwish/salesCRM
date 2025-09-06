@@ -69,18 +69,18 @@ const authVariants = {
 const transitions = {
   default: {
     duration: 0.25,
-    ease: [0.25, 0.46, 0.45, 0.94], // Custom easing for smooth feel
+    ease: [0.25, 0.46, 0.45, 0.94] as const, // Custom easing for smooth feel
   },
   fast: {
     duration: 0.15,
-    ease: [0.25, 0.46, 0.45, 0.94],
+    ease: [0.25, 0.46, 0.45, 0.94] as const,
   },
   slow: {
     duration: 0.35,
-    ease: [0.25, 0.46, 0.45, 0.94],
+    ease: [0.25, 0.46, 0.45, 0.94] as const,
   },
   spring: {
-    type: 'spring',
+    type: 'spring' as const,
     stiffness: 300,
     damping: 30,
   },
@@ -94,11 +94,11 @@ interface PageTransitionProps {
   className?: string;
 }
 
-export function PageTransition({ 
-  children, 
-  variant = 'fade', 
+export function PageTransition({
+  children,
+  variant = 'fade',
   transition = 'default',
-  className = '' 
+  className = ''
 }: PageTransitionProps) {
   const pathname = usePathname();
 
@@ -143,10 +143,10 @@ interface AuthFormTransitionProps {
   className?: string;
 }
 
-export function AuthFormTransition({ 
-  children, 
-  isVisible, 
-  className = '' 
+export function AuthFormTransition({
+  children,
+  isVisible,
+  className = ''
 }: AuthFormTransitionProps) {
   return (
     <AnimatePresence mode="wait">
@@ -173,10 +173,10 @@ interface FormFieldTransitionProps {
   className?: string;
 }
 
-export function FormFieldTransition({ 
-  children, 
-  delay = 0, 
-  className = '' 
+export function FormFieldTransition({
+  children,
+  delay = 0,
+  className = ''
 }: FormFieldTransitionProps) {
   return (
     <motion.div
@@ -201,11 +201,11 @@ interface LoadingTransitionProps {
   className?: string;
 }
 
-export function LoadingTransition({ 
-  isLoading, 
-  children, 
+export function LoadingTransition({
+  isLoading,
+  children,
   loadingComponent,
-  className = '' 
+  className = ''
 }: LoadingTransitionProps) {
   return (
     <AnimatePresence mode="wait">
@@ -249,12 +249,12 @@ interface ButtonTransitionProps {
   onClick?: () => void;
 }
 
-export function ButtonTransition({ 
-  children, 
-  isPressed = false, 
+export function ButtonTransition({
+  children,
+  isPressed = false,
   disabled = false,
   className = '',
-  onClick 
+  onClick
 }: ButtonTransitionProps) {
   return (
     <motion.button
@@ -278,10 +278,10 @@ interface StaggerTransitionProps {
   className?: string;
 }
 
-export function StaggerTransition({ 
-  children, 
+export function StaggerTransition({
+  children,
   staggerDelay = 0.1,
-  className = '' 
+  className = ''
 }: StaggerTransitionProps) {
   return (
     <motion.div

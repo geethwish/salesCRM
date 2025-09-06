@@ -59,7 +59,15 @@ export const sampleOrderData = [
  * Large dataset for performance testing
  */
 export const generateLargeOrderDataset = (count: number = 1000) => {
-  const orders = [];
+  const orders: Array<{
+    customer: string;
+    category: string;
+    date: string;
+    source: string;
+    geo: string;
+    amount: number;
+    status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+  }> = [];
   const categories = Object.values(OrderCategory);
   const sources = Object.values(OrderSource);
   const locations = [

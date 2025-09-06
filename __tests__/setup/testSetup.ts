@@ -45,7 +45,9 @@ export class TestDatabaseSetup {
   /**
    * Seed database with custom data
    */
-  static async seedCustomData(orders: Partial<Order>[]): Promise<void> {
+  static async seedCustomData(
+    orders: Omit<Order, "id" | "createdAt" | "updatedAt">[]
+  ): Promise<void> {
     await this.clearDatabase();
 
     for (const orderData of orders) {

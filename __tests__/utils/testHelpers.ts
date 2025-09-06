@@ -54,7 +54,11 @@ export function createMockRequest(
     requestInit.body = JSON.stringify(body);
   }
 
-  return new NextRequest(url, requestInit);
+  // Filter out null signal to match NextRequest's RequestInit type
+  const { signal, ...filteredInit } = requestInit;
+  const nextRequestInit = signal === null ? filteredInit : requestInit;
+
+  return new NextRequest(url, nextRequestInit);
 }
 
 /**
@@ -100,7 +104,11 @@ export function createCookieAuthenticatedRequest(
     requestInit.body = JSON.stringify(body);
   }
 
-  return new NextRequest(url, requestInit);
+  // Filter out null signal to match NextRequest's RequestInit type
+  const { signal, ...filteredInit } = requestInit;
+  const nextRequestInit = signal === null ? filteredInit : requestInit;
+
+  return new NextRequest(url, nextRequestInit);
 }
 
 /**
