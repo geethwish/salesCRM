@@ -35,7 +35,7 @@ export function OrdersFilter({ filters, onFiltersChange, onClearFilters, loading
   const handleFilterChange = (key: keyof FilterValues, value: string) => {
     const newFilters = { ...localFilters, [key]: value || undefined };
     setLocalFilters(newFilters);
-    
+
     // Apply filters immediately for non-search fields
     if (key !== 'search') {
       onFiltersChange(newFilters);
@@ -58,7 +58,7 @@ export function OrdersFilter({ filters, onFiltersChange, onClearFilters, loading
 
   // Get category options
   const categoryOptions = Object.values(OrderCategory);
-  
+
   // Get source options
   const sourceOptions = Object.values(OrderSource);
 
@@ -79,7 +79,7 @@ export function OrdersFilter({ filters, onFiltersChange, onClearFilters, loading
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search orders..."
+              placeholder="Search by customer, category, source, or location..."
               value={localFilters.search || ''}
               onChange={(e) => handleFilterChange('search', e.target.value)}
               disabled={loading}
@@ -87,7 +87,7 @@ export function OrdersFilter({ filters, onFiltersChange, onClearFilters, loading
             />
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           {hasActiveFilters && (
             <motion.button
@@ -101,15 +101,14 @@ export function OrdersFilter({ filters, onFiltersChange, onClearFilters, loading
               Clear
             </motion.button>
           )}
-          
+
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             disabled={loading}
-            className={`inline-flex items-center px-3 py-2 border rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-              isExpanded || hasActiveFilters
-                ? 'border-blue-500 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
-            }`}
+            className={`inline-flex items-center px-3 py-2 border rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isExpanded || hasActiveFilters
+              ? 'border-blue-500 text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+              : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
+              }`}
           >
             <Filter className="h-4 w-4 mr-1" />
             Filters
