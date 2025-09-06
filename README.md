@@ -1,36 +1,191 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sales CRM Application
 
-## Getting Started
+A modern, full-stack Customer Relationship Management (CRM) application built with Next.js, TypeScript, MongoDB, and deployed on Vercel with automated CI/CD.
 
-First, run the development server:
+## 🚀 Features
+
+- **Modern Tech Stack**: Next.js 15, React 19, TypeScript, MongoDB
+- **Authentication**: JWT-based authentication with secure password hashing
+- **Database**: MongoDB with Mongoose ODM and proper indexing
+- **UI Components**: Shadcn/ui components with Tailwind CSS
+- **Testing**: Comprehensive test suite with Jest and Testing Library
+- **Deployment**: Automated deployment to Vercel with GitHub Actions
+- **Type Safety**: Full TypeScript implementation with strict mode
+
+## 🛠️ Technology Stack
+
+- **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
+- **Backend**: Next.js API Routes, MongoDB, Mongoose
+- **Authentication**: JWT, bcryptjs
+- **UI Components**: Radix UI, Shadcn/ui, Lucide React
+- **Testing**: Jest, Testing Library, Playwright
+- **Deployment**: Vercel, GitHub Actions
+- **Development**: ESLint, Prettier, Husky
+
+## 📋 Prerequisites
+
+- Node.js 18.17+ (recommended: Node.js 20 LTS)
+- MongoDB (local installation or MongoDB Atlas)
+- npm or yarn package manager
+
+## 🚀 Quick Start
+
+### 1. Clone and Install
+
+```bash
+git clone <repository-url>
+cd sales-crm
+npm install
+```
+
+### 2. Environment Setup
+
+```bash
+# Copy environment template
+cp .env.example .env.local
+
+# Edit .env.local with your configuration
+# MONGODB_URI=mongodb://localhost:27017/sales-crm
+# JWT_SECRET=your-jwt-secret-here
+```
+
+### 3. Database Setup
+
+```bash
+# Start MongoDB (if running locally)
+# macOS: brew services start mongodb/brew/mongodb-community
+# Linux: sudo systemctl start mongod
+
+# Seed the database
+npm run seed
+```
+
+### 4. Start Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 5. Default Login
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Email**: `admin@crm.com`
+- **Password**: `password`
 
-## Learn More
+## 🧪 Testing
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Run all tests
+npm test
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Run tests with coverage
+npm run test:coverage
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Run tests in watch mode
+npm run test:watch
 
-## Deploy on Vercel
+# Run linting
+npm run lint
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Type checking
+npx tsc --noEmit
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🚀 Deployment
+
+This project includes automated deployment to Vercel using GitHub Actions.
+
+### Quick Deployment Setup
+
+1. **Run the setup script**:
+
+   ```bash
+   ./scripts/setup-vercel.sh
+   ```
+
+2. **Configure GitHub Secrets** (see `.github/README.md` for details):
+
+   - `VERCEL_TOKEN`
+   - `VERCEL_ORG_ID`
+   - `VERCEL_PROJECT_ID`
+   - `MONGODB_URI`
+   - `JWT_SECRET`
+
+3. **Push to main branch** for automatic deployment
+
+### Manual Deployment
+
+```bash
+# Install Vercel CLI
+npm install -g vercel@latest
+
+# Login and deploy
+vercel login
+vercel --prod
+```
+
+For detailed deployment instructions, see:
+
+- [Deployment Checklist](./DEPLOYMENT_CHECKLIST.md)
+- [GitHub Actions Setup](./.github/README.md)
+
+## 📁 Project Structure
+
+```
+sales-crm/
+├── app/                    # Next.js App Router
+│   ├── api/               # API routes
+│   ├── auth/              # Authentication pages
+│   ├── dashboard/         # Dashboard pages
+│   └── globals.css        # Global styles
+├── components/            # React components
+│   ├── auth/             # Authentication components
+│   ├── dashboard/        # Dashboard components
+│   └── ui/               # UI components (shadcn/ui)
+├── lib/                  # Utility libraries
+│   ├── database/         # Database connection
+│   ├── models/           # Mongoose models
+│   ├── services/         # Business logic
+│   └── utils/            # Utility functions
+├── __tests__/            # Test files
+├── .github/              # GitHub Actions workflows
+└── scripts/              # Utility scripts
+```
+
+## 🔧 Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm start` - Start production server
+- `npm test` - Run tests
+- `npm run test:coverage` - Run tests with coverage
+- `npm run lint` - Run ESLint
+- `npm run seed` - Seed database with sample data
+
+## 📚 Documentation
+
+- [MongoDB Migration Guide](./MONGODB_MIGRATION.md)
+- [Deployment Checklist](./DEPLOYMENT_CHECKLIST.md)
+- [GitHub Actions Setup](./.github/README.md)
+- [Search Functionality](./SEARCH_FUNCTIONALITY.md)
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+For support and questions:
+
+- Check the [documentation](./MONGODB_MIGRATION.md)
+- Review [troubleshooting guide](./.github/README.md#troubleshooting)
+- Open an issue on GitHub

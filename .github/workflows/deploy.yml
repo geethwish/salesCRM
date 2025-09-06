@@ -1,0 +1,228 @@
+# GitHub Actions Workflow for Sales CRM Deployment to Vercel
+# This workflow handles automated testing, building, and deployment of the Next.js application
+
+name: Deploy to Vercel
+
+# Trigger the workflow on pushes to main branch and pull requests
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Set environment variables for the workflow
+env:
+  # Vercel configuration
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+  # Application environment variables for testing
+  NODE_ENV: test
+  MONGODB_URI: mongodb://localhost:27017/sales-crm-test
+  MONGODB_DB_NAME: sales-crm-test
+  JWT_SECRET: test-jwt-secret-for-github-actions
+  NEXT_PUBLIC_API_URL: http://localhost:3000
+
+# Define jobs to run
+jobs:
+  # Job 1: Run tests and build checks
+  test-and-build:
+    name: Test and Build
+    runs-on: ubuntu-latest
+
+    # Use MongoDB service for testing
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ping: 1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      # Step 1: Checkout the repository code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Setup Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20" # Use Node.js 20 LTS for stability
+          cache: "npm" # Cache npm dependencies for faster builds
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # Step 4: Run linting
+      - name: Run ESLint
+        run: npm run lint
+
+      # Step 5: Run type checking
+      - name: Run TypeScript type check
+        run: npx tsc --noEmit
+
+      # Step 6: Run tests with coverage
+      - name: Run tests
+        run: npm run test:coverage
+        env:
+          # Override environment variables for testing
+          NODE_ENV: test
+          MONGODB_URI: mongodb://localhost:27017/sales-crm-test
+
+      # Step 7: Upload test coverage to GitHub
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: always() # Upload coverage even if tests fail
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      # Step 8: Build the application
+      - name: Build application
+        run: npm run build
+        env:
+          # Production-like environment variables for build
+          NODE_ENV: production
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          MONGODB_DB_NAME: ${{ secrets.MONGODB_DB_NAME }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+
+      # Step 9: Cache build artifacts
+      - name: Cache build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            .next/cache
+            .next/static
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+
+  # Job 2: Deploy to Vercel (only on main branch)
+  deploy:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    needs: test-and-build # Only run if tests and build pass
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' # Only deploy from main branch pushes
+
+    steps:
+      # Step 1: Checkout the repository code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Setup Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # Step 4: Install Vercel CLI
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      # Step 5: Pull Vercel environment information
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      # Step 6: Build project artifacts for Vercel
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          # Production environment variables
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          MONGODB_DB_NAME: ${{ secrets.MONGODB_DB_NAME }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+
+      # Step 7: Deploy to Vercel
+      - name: Deploy Project Artifacts to Vercel
+        id: deploy
+        run: |
+          url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "deployment-url=$url" >> $GITHUB_OUTPUT
+
+      # Step 8: Comment deployment URL on PR (if applicable)
+      - name: Comment deployment URL
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🚀 Deployed to Vercel: ${{ steps.deploy.outputs.deployment-url }}'
+            })
+
+  # Job 3: Preview deployment for pull requests
+  preview-deploy:
+    name: Preview Deploy
+    runs-on: ubuntu-latest
+    needs: test-and-build # Only run if tests and build pass
+    if: github.event_name == 'pull_request' # Only run for pull requests
+
+    steps:
+      # Step 1: Checkout the repository code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Setup Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # Step 4: Install Vercel CLI
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      # Step 5: Pull Vercel environment information
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+
+      # Step 6: Build project artifacts for preview
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          # Preview environment variables (can use staging/preview values)
+          MONGODB_URI: ${{ secrets.MONGODB_URI_PREVIEW || secrets.MONGODB_URI }}
+          MONGODB_DB_NAME: ${{ secrets.MONGODB_DB_NAME_PREVIEW || secrets.MONGODB_DB_NAME }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL_PREVIEW || secrets.NEXT_PUBLIC_API_URL }}
+
+      # Step 7: Deploy preview to Vercel
+      - name: Deploy Preview to Vercel
+        id: preview-deploy
+        run: |
+          url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "preview-url=$url" >> $GITHUB_OUTPUT
+
+      # Step 8: Comment preview URL on PR
+      - name: Comment preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🔍 Preview deployment: ${{ steps.preview-deploy.outputs.preview-url }}'
+            })
