@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Authentication slice using Redux Toolkit
  *
@@ -10,7 +11,6 @@
  */
 
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { useRouter } from "next/navigation";
 import {
   AuthState,
   PublicUser,

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Performance monitoring and optimization utilities
  */
@@ -50,11 +51,12 @@ export class PerformanceTimer {
  * Memory usage monitoring
  */
 export function logMemoryUsage(label?: string): void {
-  if (typeof process !== 'undefined' && process.memoryUsage) {
+  if (typeof process !== "undefined" && process.memoryUsage) {
     const usage = process.memoryUsage();
-    const formatBytes = (bytes: number) => (bytes / 1024 / 1024).toFixed(2) + ' MB';
-    
-    console.log(`[Memory${label ? ` - ${label}` : ''}]`, {
+    const formatBytes = (bytes: number) =>
+      (bytes / 1024 / 1024).toFixed(2) + " MB";
+
+    console.log(`[Memory${label ? ` - ${label}` : ""}]`, {
       rss: formatBytes(usage.rss),
       heapTotal: formatBytes(usage.heapTotal),
       heapUsed: formatBytes(usage.heapUsed),
@@ -93,9 +95,11 @@ export class LRUCache<K, V> {
     } else if (this.cache.size >= this.capacity) {
       // Remove least recently used (first item)
       const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
     }
-    
+
     this.cache.set(key, value);
   }
 
@@ -124,7 +128,7 @@ export function debounce<T extends (...args: any[]) => any>(
   wait: number
 ): (...args: Parameters<T>) => void {
   let timeout: NodeJS.Timeout;
-  
+
   return (...args: Parameters<T>) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
@@ -139,12 +143,12 @@ export function throttle<T extends (...args: any[]) => any>(
   limit: number
 ): (...args: Parameters<T>) => void {
   let inThrottle: boolean;
-  
+
   return (...args: Parameters<T>) => {
     if (!inThrottle) {
       func(...args);
       inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
+      setTimeout(() => (inThrottle = false), limit);
     }
   };
 }
@@ -171,7 +175,7 @@ export class BatchProcessor<T> {
 
   add(item: T): void {
     this.batch.push(item);
-    
+
     if (this.batch.length >= this.batchSize) {
       this.flush();
     } else if (!this.timer) {
@@ -181,19 +185,19 @@ export class BatchProcessor<T> {
 
   async flush(): Promise<void> {
     if (this.batch.length === 0) return;
-    
+
     const items = [...this.batch];
     this.batch = [];
-    
+
     if (this.timer) {
       clearTimeout(this.timer);
       this.timer = undefined;
     }
-    
+
     try {
       await this.processor(items);
     } catch (error) {
-      console.error('Batch processing error:', error);
+      console.error("Batch processing error:", error);
     }
   }
 }
@@ -223,15 +227,17 @@ export class RequestDeduplicator<T> {
  */
 export function shouldCompress(contentType: string, size: number): boolean {
   const compressibleTypes = [
-    'application/json',
-    'text/plain',
-    'text/html',
-    'text/css',
-    'application/javascript',
-    'text/javascript',
+    "application/json",
+    "text/plain",
+    "text/html",
+    "text/css",
+    "application/javascript",
+    "text/javascript",
   ];
 
-  return compressibleTypes.some(type => contentType.includes(type)) && size > 1024;
+  return (
+    compressibleTypes.some((type) => contentType.includes(type)) && size > 1024
+  );
 }
 
 /**
@@ -255,10 +261,10 @@ export class PerformanceMetrics {
     if (!this.metrics.has(operation)) {
       this.metrics.set(operation, []);
     }
-    
+
     const durations = this.metrics.get(operation)!;
     durations.push(duration);
-    
+
     // Keep only last 100 measurements
     if (durations.length > 100) {
       durations.shift();

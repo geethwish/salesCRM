@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { ApiResponse } from "@/lib/types/order";
 import { HTTP_STATUS, ERROR_MESSAGES } from "@/lib/constants";

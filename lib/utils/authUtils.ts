@@ -1,12 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Authentication utility functions for Redux-based auth system
- * 
+ *
  * These utilities provide helper functions for authentication-related operations
  * that work with the Redux store and redux-persist.
  */
 
-import { RootState } from '@/lib/store';
-import { PublicUser } from '@/lib/types/auth';
+import { RootState } from "@/lib/store";
+import { PublicUser } from "@/lib/types/auth";
 
 /**
  * Check if user has a specific role
@@ -26,8 +27,8 @@ export function hasAnyRole(user: PublicUser | null, roles: string[]): boolean {
  * Get user's display name
  */
 export function getUserDisplayName(user: PublicUser | null): string {
-  if (!user) return 'Guest';
-  return user.name || user.email || 'User';
+  if (!user) return "Guest";
+  return user.name || user.email || "User";
 }
 
 /**
@@ -70,9 +71,9 @@ export function getCurrentUser(state: RootState): PublicUser | null {
  */
 export function createAuthHeader(token: string | null): Record<string, string> {
   if (!token) return {};
-  
+
   return {
-    'Authorization': `Bearer ${token}`,
+    Authorization: `Bearer ${token}`,
   };
 }
 
@@ -81,16 +82,16 @@ export function createAuthHeader(token: string | null): Record<string, string> {
  * This is mainly used during rehydration
  */
 export function hasStoredToken(): boolean {
-  if (typeof window === 'undefined') return false;
-  
+  if (typeof window === "undefined") return false;
+
   try {
-    const persistedAuth = localStorage.getItem('persist:auth');
+    const persistedAuth = localStorage.getItem("persist:auth");
     if (!persistedAuth) return false;
-    
+
     const authState = JSON.parse(persistedAuth);
-    return authState.token && authState.token !== 'null';
+    return authState.token && authState.token !== "null";
   } catch (error) {
-    console.error('Error checking stored token:', error);
+    console.error("Error checking stored token:", error);
     return false;
   }
 }
@@ -99,12 +100,12 @@ export function hasStoredToken(): boolean {
  * Clear persisted auth data (useful for logout or error recovery)
  */
 export function clearPersistedAuth(): void {
-  if (typeof window === 'undefined') return;
-  
+  if (typeof window === "undefined") return;
+
   try {
-    localStorage.removeItem('persist:auth');
+    localStorage.removeItem("persist:auth");
   } catch (error) {
-    console.error('Error clearing persisted auth:', error);
+    console.error("Error clearing persisted auth:", error);
   }
 }
 
@@ -114,10 +115,10 @@ export function clearPersistedAuth(): void {
 export function isValidUser(user: any): user is PublicUser {
   return (
     user &&
-    typeof user === 'object' &&
-    typeof user.id === 'string' &&
-    typeof user.email === 'string' &&
-    typeof user.role === 'string'
+    typeof user === "object" &&
+    typeof user.id === "string" &&
+    typeof user.email === "string" &&
+    typeof user.role === "string"
   );
 }
 
@@ -126,12 +127,12 @@ export function isValidUser(user: any): user is PublicUser {
  */
 export function formatUserRole(role: string): string {
   switch (role.toLowerCase()) {
-    case 'admin':
-      return 'Administrator';
-    case 'manager':
-      return 'Manager';
-    case 'user':
-      return 'User';
+    case "admin":
+      return "Administrator";
+    case "manager":
+      return "Manager";
+    case "user":
+      return "User";
     default:
       return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
   }
@@ -141,26 +142,26 @@ export function formatUserRole(role: string): string {
  * Check if user can access admin features
  */
 export function canAccessAdmin(user: PublicUser | null): boolean {
-  return hasRole(user, 'admin');
+  return hasRole(user, "admin");
 }
 
 /**
  * Check if user can manage other users
  */
 export function canManageUsers(user: PublicUser | null): boolean {
-  return hasAnyRole(user, ['admin', 'manager']);
+  return hasAnyRole(user, ["admin", "manager"]);
 }
 
 /**
  * Get user initials for avatar display
  */
 export function getUserInitials(user: PublicUser | null): string {
-  if (!user || !user.name) return '?';
-  
-  const names = user.name.trim().split(' ');
+  if (!user || !user.name) return "?";
+
+  const names = user.name.trim().split(" ");
   if (names.length === 1) {
     return names[0].charAt(0).toUpperCase();
   }
-  
+
   return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
 }

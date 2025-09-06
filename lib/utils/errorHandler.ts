@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
-import { ZodError } from 'zod';
-import { ApiResponse, ApiError } from '@/lib/types/order';
-import { HTTP_STATUS, ERROR_MESSAGES } from '@/lib/constants';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { NextResponse } from "next/server";
+import { ZodError } from "zod";
+import { ApiResponse, ApiError } from "@/lib/types/order";
+import { HTTP_STATUS, ERROR_MESSAGES } from "@/lib/constants";
 
 /**
  * Custom error classes
@@ -9,14 +10,14 @@ import { HTTP_STATUS, ERROR_MESSAGES } from '@/lib/constants';
 export class ValidationError extends Error {
   constructor(message: string, public details?: any) {
     super(message);
-    this.name = 'ValidationError';
+    this.name = "ValidationError";
   }
 }
 
 export class NotFoundError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'NotFoundError';
+    this.name = "NotFoundError";
   }
 }
 
@@ -34,16 +35,16 @@ export class ErrorHandler {
    * Handle different types of errors and return appropriate API response
    */
   static handleError(error: unknown): NextResponse<ApiResponse> {
-    console.error('API Error:', error);
+    console.error("API Error:", error);
 
     // Zod validation errors
     if (error instanceof ZodError) {
       const apiError: ApiError = {
         error: ERROR_MESSAGES.VALIDATION_ERROR,
-        message: 'Request validation failed',
+        message: "Request validation failed",
         statusCode: HTTP_STATUS.BAD_REQUEST,
-        details: error.errors.map(err => ({
-          field: err.path.join('.'),
+        details: error.errors.map((err) => ({
+          field: err.path.join("."),
           message: err.message,
           code: err.code,
         })),
@@ -96,7 +97,7 @@ export class ErrorHandler {
     // Conflict errors
     if (error instanceof ConflictError) {
       const apiError: ApiError = {
-        error: 'Conflict',
+        error: "Conflict",
         message: error.message,
         statusCode: HTTP_STATUS.CONFLICT,
       };
@@ -114,7 +115,10 @@ export class ErrorHandler {
     if (error instanceof Error) {
       const apiError: ApiError = {
         error: ERROR_MESSAGES.INTERNAL_ERROR,
-        message: process.env.NODE_ENV === 'development' ? error.message : 'An unexpected error occurred',
+        message:
+          process.env.NODE_ENV === "development"
+            ? error.message
+            : "An unexpected error occurred",
         statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
       };
 
@@ -130,7 +134,7 @@ export class ErrorHandler {
     // Unknown errors
     const apiError: ApiError = {
       error: ERROR_MESSAGES.INTERNAL_ERROR,
-      message: 'An unknown error occurred',
+      message: "An unknown error occurred",
       statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
     };
 
@@ -146,7 +150,10 @@ export class ErrorHandler {
   /**
    * Create a success response
    */
-  static success<T>(data: T, status: number = HTTP_STATUS.OK): NextResponse<ApiResponse<T>> {
+  static success<T>(
+    data: T,
+    status: number = HTTP_STATUS.OK
+  ): NextResponse<ApiResponse<T>> {
     return NextResponse.json(
       {
         success: true,
@@ -201,9 +208,9 @@ export function asyncHandler(
  * Rate limiting error
  */
 export class RateLimitError extends Error {
-  constructor(message: string = 'Too many requests') {
+  constructor(message: string = "Too many requests") {
     super(message);
-    this.name = 'RateLimitError';
+    this.name = "RateLimitError";
   }
 }
 
@@ -211,9 +218,9 @@ export class RateLimitError extends Error {
  * Authentication error
  */
 export class AuthenticationError extends Error {
-  constructor(message: string = 'Authentication required') {
+  constructor(message: string = "Authentication required") {
     super(message);
-    this.name = 'AuthenticationError';
+    this.name = "AuthenticationError";
   }
 }
 
@@ -221,8 +228,8 @@ export class AuthenticationError extends Error {
  * Authorization error
  */
 export class AuthorizationError extends Error {
-  constructor(message: string = 'Insufficient permissions') {
+  constructor(message: string = "Insufficient permissions") {
     super(message);
-    this.name = 'AuthorizationError';
+    this.name = "AuthorizationError";
   }
 }

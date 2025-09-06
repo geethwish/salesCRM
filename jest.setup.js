@@ -1,4 +1,4 @@
-require("@testing-library/jest-dom");
+import "@testing-library/jest-dom";
 
 // Mock ResizeObserver
 global.ResizeObserver = jest.fn().mockImplementation(() => ({

@@ -1,6 +1,10 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { Order, OrderQuery, OrderListResponse } from '@/lib/types/order';
-import { ordersApi, handleApiResponse, handleApiError } from '@/lib/services/apiService';
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { Order, OrderQuery } from "@/lib/types/order";
+import {
+  ordersApi,
+  handleApiResponse,
+  handleApiError,
+} from "@/lib/services/apiService";
 
 // Dashboard state interface
 export interface DashboardState {
@@ -15,7 +19,7 @@ export interface DashboardState {
     hasNext: boolean;
     hasPrev: boolean;
   };
-  
+
   // Statistics
   stats: {
     total: number;
@@ -25,7 +29,7 @@ export interface DashboardState {
     bySource: Record<string, number>;
     byLocation: Record<string, number>;
   } | null;
-  
+
   // Filters
   filters: {
     category?: string;
@@ -34,10 +38,10 @@ export interface DashboardState {
     dateFrom?: string;
     dateTo?: string;
     search?: string;
-    sortBy: 'date' | 'customer' | 'amount' | 'createdAt';
-    sortOrder: 'asc' | 'desc';
+    sortBy: "date" | "customer" | "amount" | "createdAt";
+    sortOrder: "asc" | "desc";
   };
-  
+
   // UI state
   loading: {
     orders: boolean;
@@ -46,7 +50,7 @@ export interface DashboardState {
     updating: boolean;
     deleting: boolean;
   };
-  
+
   error: string | null;
   selectedOrder: Order | null;
 }
@@ -65,8 +69,8 @@ const initialState: DashboardState = {
   },
   stats: null,
   filters: {
-    sortBy: 'date',
-    sortOrder: 'desc',
+    sortBy: "date",
+    sortOrder: "desc",
   },
   loading: {
     orders: false,
@@ -81,7 +85,7 @@ const initialState: DashboardState = {
 
 // Async thunks
 export const fetchOrders = createAsyncThunk(
-  'dashboard/fetchOrders',
+  "dashboard/fetchOrders",
   async (query: Partial<OrderQuery> = {}, { rejectWithValue }) => {
     try {
       const response = await ordersApi.getOrders(query);
@@ -93,7 +97,7 @@ export const fetchOrders = createAsyncThunk(
 );
 
 export const fetchStats = createAsyncThunk(
-  'dashboard/fetchStats',
+  "dashboard/fetchStats",
   async (_, { rejectWithValue }) => {
     try {
       const response = await ordersApi.getStats();
@@ -105,8 +109,11 @@ export const fetchStats = createAsyncThunk(
 );
 
 export const createOrder = createAsyncThunk(
-  'dashboard/createOrder',
-  async (orderData: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>, { rejectWithValue }) => {
+  "dashboard/createOrder",
+  async (
+    orderData: Omit<Order, "id" | "createdAt" | "updatedAt">,
+    { rejectWithValue }
+  ) => {
     try {
       const response = await ordersApi.createOrder(orderData);
       return handleApiResponse(response);
@@ -117,8 +124,11 @@ export const createOrder = createAsyncThunk(
 );
 
 export const updateOrder = createAsyncThunk(
-  'dashboard/updateOrder',
-  async ({ id, data }: { id: string; data: Partial<Order> }, { rejectWithValue }) => {
+  "dashboard/updateOrder",
+  async (
+    { id, data }: { id: string; data: Partial<Order> },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await ordersApi.updateOrder(id, data);
       return handleApiResponse(response);
@@ -129,7 +139,7 @@ export const updateOrder = createAsyncThunk(
 );
 
 export const deleteOrder = createAsyncThunk(
-  'dashboard/deleteOrder',
+  "dashboard/deleteOrder",
   async (id: string, { rejectWithValue }) => {
     try {
       await ordersApi.deleteOrder(id);
@@ -142,36 +152,39 @@ export const deleteOrder = createAsyncThunk(
 
 // Dashboard slice
 const dashboardSlice = createSlice({
-  name: 'dashboard',
+  name: "dashboard",
   initialState,
   reducers: {
     // Filter actions
-    setFilters: (state, action: PayloadAction<Partial<DashboardState['filters']>>) => {
+    setFilters: (
+      state,
+      action: PayloadAction<Partial<DashboardState["filters"]>>
+    ) => {
       state.filters = { ...state.filters, ...action.payload };
     },
-    
+
     clearFilters: (state) => {
       state.filters = {
-        sortBy: 'date',
-        sortOrder: 'desc',
+        sortBy: "date",
+        sortOrder: "desc",
       };
     },
-    
+
     // Pagination actions
     setPage: (state, action: PayloadAction<number>) => {
       state.pagination.page = action.payload;
     },
-    
+
     setLimit: (state, action: PayloadAction<number>) => {
       state.pagination.limit = action.payload;
       state.pagination.page = 1; // Reset to first page when changing limit
     },
-    
+
     // UI actions
     clearError: (state) => {
       state.error = null;
     },
-    
+
     setSelectedOrder: (state, action: PayloadAction<Order | null>) => {
       state.selectedOrder = action.payload;
     },
@@ -232,7 +245,9 @@ const dashboardSlice = createSlice({
       })
       .addCase(updateOrder.fulfilled, (state, action) => {
         state.loading.updating = false;
-        const index = state.orders.findIndex(order => order.id === action.payload.id);
+        const index = state.orders.findIndex(
+          (order) => order.id === action.payload.id
+        );
         if (index !== -1) {
           state.orders[index] = action.payload;
         }
@@ -253,7 +268,9 @@ const dashboardSlice = createSlice({
       })
       .addCase(deleteOrder.fulfilled, (state, action) => {
         state.loading.deleting = false;
-        state.orders = state.orders.filter(order => order.id !== action.payload);
+        state.orders = state.orders.filter(
+          (order) => order.id !== action.payload
+        );
         state.totalOrders -= 1;
         if (state.selectedOrder?.id === action.payload) {
           state.selectedOrder = null;

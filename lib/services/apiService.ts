@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from "axios";
 import {
   Order,
@@ -8,6 +9,15 @@ import {
 import { toast } from "@/lib/components/ui/Toast";
 import { store } from "@/lib/store";
 import { selectToken } from "@/lib/store/slices/authSlice";
+
+// Extend Axios types to include custom metadata
+declare module "axios" {
+  export interface InternalAxiosRequestConfig {
+    metadata?: {
+      startTime: number;
+    };
+  }
+}
 
 // API configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
