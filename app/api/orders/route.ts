@@ -5,6 +5,8 @@ import {
   validateQueryParams,
   validateRequestBody,
 } from "@/lib/utils/validation";
+import { authenticateRequest } from "@/lib/utils/auth";
+import { withApiMiddleware } from "@/lib/middleware/apiMiddleware";
 import { HTTP_STATUS, ERROR_MESSAGES, SUCCESS_MESSAGES } from "@/lib/constants";
 
 /**
@@ -112,8 +114,25 @@ import { HTTP_STATUS, ERROR_MESSAGES, SUCCESS_MESSAGES } from "@/lib/constants";
  *                     error:
  *                       $ref: '#/components/schemas/ApiError'
  */
-export async function GET(request: NextRequest) {
+async function getOrdersHandler(request: NextRequest): Promise<NextResponse> {
   try {
+    // Authenticate request to get user context
+    const authPayload = authenticateRequest(request);
+
+    if (!authPayload) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            error: "Authentication Required",
+            message: ERROR_MESSAGES.UNAUTHORIZED,
+            statusCode: HTTP_STATUS.UNAUTHORIZED,
+          },
+        } as ApiResponse,
+        { status: HTTP_STATUS.UNAUTHORIZED }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
 
     // Validate query parameters
@@ -130,8 +149,8 @@ export async function GET(request: NextRequest) {
 
     const query = validation.data;
 
-    // Get orders from service
-    const result = await orderService.getOrders(query);
+    // Get user-scoped orders from service
+    const result = await orderService.getOrders(query, authPayload.userId);
 
     return NextResponse.json(
       {
@@ -156,6 +175,9 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// Apply middleware and export
+export const GET = withApiMiddleware(getOrdersHandler);
 
 /**
  * @swagger
@@ -217,8 +239,25 @@ export async function GET(request: NextRequest) {
  *                     error:
  *                       $ref: '#/components/schemas/ApiError'
  */
-export async function POST(request: NextRequest) {
+async function createOrderHandler(request: NextRequest): Promise<NextResponse> {
   try {
+    // Authenticate request to get user context
+    const authPayload = authenticateRequest(request);
+
+    if (!authPayload) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            error: "Authentication Required",
+            message: ERROR_MESSAGES.UNAUTHORIZED,
+            statusCode: HTTP_STATUS.UNAUTHORIZED,
+          },
+        } as ApiResponse,
+        { status: HTTP_STATUS.UNAUTHORIZED }
+      );
+    }
+
     // Validate request body
     const validation = await validateRequestBody(
       request,
@@ -241,8 +280,11 @@ export async function POST(request: NextRequest) {
 
     const orderData = validation.data;
 
-    // Create order
-    const newOrder = await orderService.createOrder(orderData);
+    // Create user-scoped order
+    const newOrder = await orderService.createOrder(
+      orderData,
+      authPayload.userId
+    );
 
     return NextResponse.json(
       {
@@ -267,6 +309,9 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// Apply middleware and export
+export const POST = withApiMiddleware(createOrderHandler);
 
 /**
  * Handle unsupported methods

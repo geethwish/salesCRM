@@ -98,8 +98,8 @@ export function CategoryChart({ data, loading = false }: CategoryChartProps) {
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-          <XAxis 
-            dataKey="name" 
+          <XAxis
+            dataKey="name"
             className="text-gray-600 dark:text-gray-400"
             tick={{ fontSize: 12 }}
             angle={-45}
@@ -162,31 +162,65 @@ interface LocationChartProps {
 export function LocationChart({ data, loading = false }: LocationChartProps) {
   const chartData = Object.entries(data || {})
     .sort(([, a], [, b]) => b - a)
-    .slice(0, 10) // Show top 10 locations
+    .slice(0, 25) // Show top 25 locations to match the reference image
     .map(([name, value]) => ({
       name,
       value,
+      soldCount: value, // For tooltip display
     }));
 
+  // Custom tooltip for location chart
+  const LocationTooltip = ({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-gray-800 text-white border border-gray-600 rounded-lg shadow-lg p-3 max-w-xs">
+          <p className="font-semibold text-sm">{label}</p>
+          <p className="text-sm text-blue-300">
+            Sold Count: {payload[0].value}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
-    <ChartContainer title="Top Locations" loading={loading}>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart 
-          data={chartData} 
-          layout="horizontal"
-          margin={{ top: 20, right: 30, left: 50, bottom: 5 }}
+    <ChartContainer title="Top Locations - Sold Products by City" loading={loading}>
+      <ResponsiveContainer width="100%" height={400}>
+        <BarChart
+          data={chartData}
+          margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+          barCategoryGap="10%"
         >
           <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-          <XAxis type="number" className="text-gray-600 dark:text-gray-400" tick={{ fontSize: 12 }} />
-          <YAxis 
-            type="category" 
-            dataKey="name" 
+          <XAxis
+            dataKey="name"
+            className="text-gray-600 dark:text-gray-400"
+            tick={{ fontSize: 11 }}
+            angle={-45}
+            textAnchor="end"
+            height={80}
+            interval={0}
+          />
+          <YAxis
             className="text-gray-600 dark:text-gray-400"
             tick={{ fontSize: 12 }}
-            width={80}
+            label={{
+              value: 'Sold Count',
+              angle: -90,
+              position: 'insideLeft',
+              style: { textAnchor: 'middle' }
+            }}
+            domain={[0, 'dataMax + 0.5']}
           />
-          <Tooltip content={<CustomTooltip />} />
-          <Bar dataKey="value" fill={COLORS[2]} radius={[0, 4, 4, 0]} />
+          <Tooltip content={<LocationTooltip />} />
+          <Bar
+            dataKey="value"
+            fill="#60A5FA"
+            radius={[4, 4, 0, 0]}
+            minPointSize={2}
+            maxBarSize={40}
+          />
         </BarChart>
       </ResponsiveContainer>
     </ChartContainer>

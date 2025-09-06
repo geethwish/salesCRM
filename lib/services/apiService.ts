@@ -6,6 +6,8 @@ import {
   ApiResponse,
 } from "@/lib/types/order";
 import { toast } from "@/lib/components/ui/Toast";
+import { store } from "@/lib/store";
+import { selectToken } from "@/lib/store/slices/authSlice";
 
 // API configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
@@ -25,8 +27,14 @@ apiClient.interceptors.request.use(
     // Add timestamp for request tracking
     config.metadata = { startTime: Date.now() };
 
-    // Add auth token if available
-    const token = localStorage.getItem("auth_token");
+    // Add auth token if available (from Redux store or localStorage fallback)
+    let token = selectToken(store.getState());
+
+    // Fallback to localStorage for backward compatibility
+    if (!token && typeof window !== "undefined") {
+      token = localStorage.getItem("auth-token");
+    }
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -100,7 +108,7 @@ apiClient.interceptors.response.use(
             const isOnAuthPage =
               currentPath.startsWith("/auth/") || currentPath === "/";
 
-            localStorage.removeItem("auth_token");
+            localStorage.removeItem("auth-token");
 
             if (!isOnAuthPage) {
               toast.error("Authentication required. Please log in.");

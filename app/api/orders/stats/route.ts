@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { orderService } from "@/lib/services/orderService";
 import { ApiResponse } from "@/lib/types/order";
+import { authenticateRequest } from "@/lib/utils/auth";
+import { withApiMiddleware } from "@/lib/middleware/apiMiddleware";
 import { HTTP_STATUS, ERROR_MESSAGES } from "@/lib/constants";
 
 /**
@@ -36,10 +38,27 @@ import { HTTP_STATUS, ERROR_MESSAGES } from "@/lib/constants";
  *                     error:
  *                       $ref: '#/components/schemas/ApiError'
  */
-export async function GET(request: NextRequest) {
+async function getStatsHandler(request: NextRequest): Promise<NextResponse> {
   try {
-    // Get statistics from service
-    const stats = await orderService.getOrderStats();
+    // Authenticate request to get user context
+    const authPayload = authenticateRequest(request);
+
+    if (!authPayload) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            error: "Authentication Required",
+            message: ERROR_MESSAGES.UNAUTHORIZED,
+            statusCode: HTTP_STATUS.UNAUTHORIZED,
+          },
+        } as ApiResponse,
+        { status: HTTP_STATUS.UNAUTHORIZED }
+      );
+    }
+
+    // Get user-scoped statistics from service
+    const stats = await orderService.getOrderStats(authPayload.userId);
 
     return NextResponse.json(
       {
@@ -64,6 +83,9 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// Apply middleware and export
+export const GET = withApiMiddleware(getStatsHandler);
 
 /**
  * Handle unsupported methods

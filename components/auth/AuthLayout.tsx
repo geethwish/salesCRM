@@ -37,13 +37,13 @@ export function AuthLayout({
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center transition-colors duration-200">
         <LoadingTransition
           isLoading={true}
           loadingComponent={
             <div className="flex flex-col items-center justify-center space-y-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
-              <p className="text-gray-600 dark:text-gray-300 text-sm">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary transition-colors duration-200"></div>
+              <p className="text-muted-foreground text-sm transition-colors duration-200">
                 Loading...
               </p>
             </div>
@@ -61,19 +61,21 @@ export function AuthLayout({
   }
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 ${className}`}>
+    <div className={`min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-colors duration-200 ${className}`}>
+      {/* Enhanced branding section with better dark mode support */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-foreground mb-3 transition-colors duration-200">
             Sales CRM
           </h1>
-          <p className="text-gray-600 dark:text-gray-300">
+          <p className="text-lg text-muted-foreground transition-colors duration-200">
             Manage your sales pipeline effectively
           </p>
         </div>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      {/* Form container with improved spacing */}
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
         {mode === 'login' ? (
           <LoginForm
             onSwitchToRegister={switchToRegister}
@@ -87,9 +89,9 @@ export function AuthLayout({
         )}
       </div>
 
-      {/* Footer */}
-      <div className="mt-8 text-center">
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+      {/* Enhanced footer with better dark mode styling */}
+      <div className="mt-12 text-center">
+        <p className="text-sm text-muted-foreground transition-colors duration-200">
           © 2024 Sales CRM. All rights reserved.
         </p>
       </div>
