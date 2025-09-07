@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
         headers: {
           "user-agent": request.headers.get("user-agent"),
           "content-type": request.headers.get("content-type"),
-          "origin": request.headers.get("origin"),
+          origin: request.headers.get("origin"),
         },
       },
       env_vars: {
@@ -40,13 +40,13 @@ export async function GET(request: NextRequest) {
         data: testData,
         message: "Test endpoint working correctly",
       } as ApiResponse,
-      { 
+      {
         status: HTTP_STATUS.OK,
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        }
+        },
       }
     );
   } catch (error) {
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    let body = null;
+    let body: object | null = null;
     try {
       body = await request.json();
     } catch {
@@ -85,7 +85,9 @@ export async function POST(request: NextRequest) {
       body: body,
       headers: {
         "content-type": request.headers.get("content-type"),
-        "authorization": request.headers.get("authorization") ? "Bearer [REDACTED]" : null,
+        authorization: request.headers.get("authorization")
+          ? "Bearer [REDACTED]"
+          : null,
       },
     };
 
@@ -95,13 +97,13 @@ export async function POST(request: NextRequest) {
         data: testData,
         message: "POST test endpoint working correctly",
       } as ApiResponse,
-      { 
+      {
         status: HTTP_STATUS.OK,
         headers: {
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        }
+        },
       }
     );
   } catch (error) {
