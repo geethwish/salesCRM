@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
 import { LoginRequest } from '@/lib/types/auth';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { loginSchema, type LoginFormData } from '@/lib/schemas/auth';
@@ -16,9 +16,9 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from '@/components/ui/form';
 import { FormFieldTransition } from '@/lib/components/ui/PageTransition';
+import { cn } from '@/lib/utils';
 
 interface LoginFormProps {
   onSwitchToRegister?: () => void;
@@ -67,7 +67,6 @@ export function LoginForm({
   return (
     <div className={`w-full max-w-sm mx-auto ${className}`}>
       <div className="bg-background p-8 rounded-3xl border-2 border-border shadow-xl transition-all duration-200">
-        {/* Header Section */}
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-foreground mb-4 transition-colors duration-200">
             Sign In
@@ -83,9 +82,12 @@ export function LoginForm({
               <FormField
                 control={form.control}
                 name="email"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem className="space-y-2">
-                    <FormLabel className="text-base font-medium text-foreground transition-colors duration-200">
+                    <FormLabel className={cn(
+                      "text-base font-medium transition-colors duration-200",
+                      fieldState.error ? "text-red-700 dark:text-red-300" : "text-foreground"
+                    )}>
                       Email Address
                     </FormLabel>
                     <FormControl>
@@ -95,12 +97,24 @@ export function LoginForm({
                           placeholder="Enter your email"
                           autoComplete="email"
                           disabled={isLoading}
-                          className="h-14 text-base rounded-2xl border-2 border-input bg-background px-4 transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          className={cn(
+                            "h-14 text-base rounded-2xl border-2 bg-background px-4 transition-all duration-200 focus:ring-2 focus:ring-primary/20",
+                            fieldState.error
+                              ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20 dark:focus:ring-red-400/20"
+                              : "border-input focus:border-primary"
+                          )}
                           {...field}
                         />
                       </div>
                     </FormControl>
-                    <FormMessage className="text-sm transition-colors duration-200" />
+                    {fieldState.error && (
+                      <div className="flex items-start gap-2 mt-1 p-2 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 transition-all duration-200">
+                        <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm font-medium text-red-700 dark:text-red-300 leading-relaxed">
+                          {fieldState.error.message}
+                        </p>
+                      </div>
+                    )}
                   </FormItem>
                 )}
               />
@@ -110,9 +124,12 @@ export function LoginForm({
               <FormField
                 control={form.control}
                 name="password"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem className="space-y-2">
-                    <FormLabel className="text-base font-medium text-foreground transition-colors duration-200">
+                    <FormLabel className={cn(
+                      "text-base font-medium transition-colors duration-200",
+                      fieldState.error ? "text-red-700 dark:text-red-300" : "text-foreground"
+                    )}>
                       Password
                     </FormLabel>
                     <FormControl>
@@ -122,7 +139,12 @@ export function LoginForm({
                           placeholder="••••••••••"
                           autoComplete="current-password"
                           disabled={isLoading}
-                          className="h-14 text-base rounded-2xl border-2 border-input bg-background px-4 pr-14 transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          className={cn(
+                            "h-14 text-base rounded-2xl border-2 bg-background px-4 pr-14 transition-all duration-200 focus:ring-2 focus:ring-primary/20",
+                            fieldState.error
+                              ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20 dark:focus:ring-red-400/20"
+                              : "border-input focus:border-primary"
+                          )}
                           {...field}
                         />
                         <Button
@@ -141,7 +163,14 @@ export function LoginForm({
                         </Button>
                       </div>
                     </FormControl>
-                    <FormMessage className="text-sm transition-colors duration-200" />
+                    {fieldState.error && (
+                      <div className="flex items-start gap-2 mt-1 p-2 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 transition-all duration-200">
+                        <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm font-medium text-red-700 dark:text-red-300 leading-relaxed">
+                          {fieldState.error.message}
+                        </p>
+                      </div>
+                    )}
                   </FormItem>
                 )}
               />
@@ -178,8 +207,16 @@ export function LoginForm({
               </Button>
             </div>
             {error && (
-              <div className="bg-destructive/10 border-2 border-destructive/20 rounded-2xl p-4 transition-colors duration-200">
-                <p className="text-base text-destructive font-medium transition-colors duration-200">{error}</p>
+              <div className="flex items-start gap-3 p-4 rounded-2xl bg-red-50 dark:bg-red-950/20 border-2 border-red-200 dark:border-red-800/30 transition-all duration-200">
+                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-base text-red-700 dark:text-red-300 font-medium leading-relaxed">
+                    Login Failed
+                  </p>
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1 leading-relaxed">
+                    {error}
+                  </p>
+                </div>
               </div>
             )}
 

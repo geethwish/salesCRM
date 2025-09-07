@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { validatePasswordStrength } from '@/lib/utils/auth';
 import { registerSchema, type RegisterFormData } from '@/lib/schemas/auth';
@@ -17,15 +17,43 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from '@/components/ui/form';
 import { FormFieldTransition } from '@/lib/components/ui/PageTransition';
+import { cn } from '@/lib/utils';
 
 interface RegisterFormProps {
   onSwitchToLogin?: () => void;
   redirectTo?: string;
   className?: string;
 }
+
+const EnhancedFormMessage = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & { error?: string }
+>(({ className, error, children, ...props }, ref) => {
+  const message = error || children;
+
+  if (!message) {
+    return null;
+  }
+
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        "flex items-start gap-2 mt-1 p-2 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 transition-all duration-200",
+        className
+      )}
+      {...props}
+    >
+      <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+      <p className="text-sm font-medium text-red-700 dark:text-red-300 leading-relaxed">
+        {message}
+      </p>
+    </div>
+  );
+});
+EnhancedFormMessage.displayName = "EnhancedFormMessage";
 
 export function RegisterForm({
   onSwitchToLogin,
@@ -52,7 +80,8 @@ export function RegisterForm({
       confirmPassword: '',
       acceptTerms: false,
     },
-    mode: 'onChange',
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
   });
 
   // Watch password field for strength validation
@@ -116,9 +145,12 @@ export function RegisterForm({
               <FormField
                 control={form.control}
                 name="name"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem className="space-y-2">
-                    <FormLabel className="text-base font-medium text-foreground transition-colors duration-200">
+                    <FormLabel className={cn(
+                      "text-base font-medium transition-colors duration-200",
+                      fieldState.error ? "text-red-700 dark:text-red-300" : "text-foreground"
+                    )}>
                       Full Name
                     </FormLabel>
                     <FormControl>
@@ -127,11 +159,18 @@ export function RegisterForm({
                         placeholder="Enter your full name"
                         autoComplete="name"
                         disabled={isLoading}
-                        className="h-14 text-base rounded-2xl border-2 border-input bg-background px-4 transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        className={cn(
+                          "h-14 text-base rounded-2xl border-2 bg-background px-4 transition-all duration-200 focus:ring-2 focus:ring-primary/20",
+                          fieldState.error
+                            ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20 dark:focus:ring-red-400/20"
+                            : "border-input focus:border-primary"
+                        )}
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage className="text-sm transition-colors duration-200" />
+                    {fieldState.error && (
+                      <EnhancedFormMessage error={fieldState.error.message} />
+                    )}
                   </FormItem>
                 )}
               />
@@ -140,9 +179,12 @@ export function RegisterForm({
               <FormField
                 control={form.control}
                 name="email"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem className="space-y-2">
-                    <FormLabel className="text-base font-medium text-foreground transition-colors duration-200">
+                    <FormLabel className={cn(
+                      "text-base font-medium transition-colors duration-200",
+                      fieldState.error ? "text-red-700 dark:text-red-300" : "text-foreground"
+                    )}>
                       Email Address
                     </FormLabel>
                     <FormControl>
@@ -151,11 +193,18 @@ export function RegisterForm({
                         placeholder="Enter your email"
                         autoComplete="email"
                         disabled={isLoading}
-                        className="h-14 text-base rounded-2xl border-2 border-input bg-background px-4 transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        className={cn(
+                          "h-14 text-base rounded-2xl border-2 bg-background px-4 transition-all duration-200 focus:ring-2 focus:ring-primary/20",
+                          fieldState.error
+                            ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20 dark:focus:ring-red-400/20"
+                            : "border-input focus:border-primary"
+                        )}
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage className="text-sm transition-colors duration-200" />
+                    {fieldState.error && (
+                      <EnhancedFormMessage error={fieldState.error.message} />
+                    )}
                   </FormItem>
                 )}
               />
@@ -164,9 +213,12 @@ export function RegisterForm({
               <FormField
                 control={form.control}
                 name="password"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem className="space-y-2">
-                    <FormLabel className="text-base font-medium text-foreground transition-colors duration-200">
+                    <FormLabel className={cn(
+                      "text-base font-medium transition-colors duration-200",
+                      fieldState.error ? "text-red-700 dark:text-red-300" : "text-foreground"
+                    )}>
                       Password
                     </FormLabel>
                     <FormControl>
@@ -176,7 +228,12 @@ export function RegisterForm({
                           placeholder="Create a password"
                           autoComplete="new-password"
                           disabled={isLoading}
-                          className="h-14 text-base rounded-2xl border-2 border-input bg-background px-4 pr-14 transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          className={cn(
+                            "h-14 text-base rounded-2xl border-2 bg-background px-4 pr-14 transition-all duration-200 focus:ring-2 focus:ring-primary/20",
+                            fieldState.error
+                              ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20 dark:focus:ring-red-400/20"
+                              : "border-input focus:border-primary"
+                          )}
                           {...field}
                         />
                         <Button
@@ -195,29 +252,41 @@ export function RegisterForm({
                         </Button>
                       </div>
                     </FormControl>
-                    <FormMessage className="text-sm transition-colors duration-200" />
+                    {fieldState.error && (
+                      <EnhancedFormMessage error={fieldState.error.message} />
+                    )}
                   </FormItem>
                 )}
               />
             </FormFieldTransition>
             {watchedPassword && (
-              <div className="mt-2 p-3 bg-muted/50 rounded-xl border border-border transition-colors duration-200">
-                <div className="text-sm font-medium text-foreground mb-2">Password requirements:</div>
+              <div className={cn(
+                "mt-2 p-3 rounded-xl border transition-all duration-200",
+                passwordStrength.isValid
+                  ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800/30"
+                  : "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/30"
+              )}>
+                <div className={cn(
+                  "text-sm font-medium mb-2 transition-colors duration-200",
+                  passwordStrength.isValid
+                    ? "text-green-800 dark:text-green-200"
+                    : "text-amber-800 dark:text-amber-200"
+                )}>
+                  Password requirements:
+                </div>
                 <ul className="text-sm space-y-1">
                   {passwordStrength.errors.map((error, index) => (
-                    <li key={index} className="flex items-center text-destructive">
-                      <svg className="h-4 w-4 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                      </svg>
-                      {error}
+                    <li key={index} className="flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-red-700 dark:text-red-300 leading-relaxed">{error}</span>
                     </li>
                   ))}
                   {passwordStrength.isValid && (
-                    <li className="flex items-center text-success">
-                      <svg className="h-4 w-4 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      Password meets all requirements
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                      <span className="text-green-700 dark:text-green-300 leading-relaxed font-medium">
+                        Password meets all requirements
+                      </span>
                     </li>
                   )}
                 </ul>
@@ -228,9 +297,12 @@ export function RegisterForm({
               <FormField
                 control={form.control}
                 name="confirmPassword"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem className="space-y-2">
-                    <FormLabel className="text-base font-medium text-foreground transition-colors duration-200">
+                    <FormLabel className={cn(
+                      "text-base font-medium transition-colors duration-200",
+                      fieldState.error ? "text-red-700 dark:text-red-300" : "text-foreground"
+                    )}>
                       Confirm Password
                     </FormLabel>
                     <FormControl>
@@ -240,7 +312,12 @@ export function RegisterForm({
                           placeholder="Confirm your password"
                           autoComplete="new-password"
                           disabled={isLoading}
-                          className="h-14 text-base rounded-2xl border-2 border-input bg-background px-4 pr-14 transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          className={cn(
+                            "h-14 text-base rounded-2xl border-2 bg-background px-4 pr-14 transition-all duration-200 focus:ring-2 focus:ring-primary/20",
+                            fieldState.error
+                              ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-500/20 dark:focus:ring-red-400/20"
+                              : "border-input focus:border-primary"
+                          )}
                           {...field}
                         />
                         <Button
@@ -259,7 +336,9 @@ export function RegisterForm({
                         </Button>
                       </div>
                     </FormControl>
-                    <FormMessage className="text-sm transition-colors duration-200" />
+                    {fieldState.error && (
+                      <EnhancedFormMessage error={fieldState.error.message} />
+                    )}
                   </FormItem>
                 )}
               />
@@ -269,45 +348,65 @@ export function RegisterForm({
               <FormField
                 control={form.control}
                 name="acceptTerms"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-3 space-y-0 py-2">
-                    <FormControl>
-                      <Checkbox
-                        disabled={isLoading}
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        className="h-5 w-5 rounded border-2 border-input transition-colors duration-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                      />
-                    </FormControl>
-                    <FormLabel className="text-base font-normal text-foreground transition-colors duration-200 cursor-pointer leading-relaxed">
-                      I agree to the{' '}
-                      <Button
-                        type="button"
-                        variant="link"
-                        className="px-0 text-base font-normal text-primary hover:text-primary/80 h-auto p-0 underline underline-offset-4 transition-colors duration-200"
-                        disabled={isLoading}
-                      >
-                        Terms of Service
-                      </Button>
-                      {' '}and{' '}
-                      <Button
-                        type="button"
-                        variant="link"
-                        className="px-0 text-base font-normal text-primary hover:text-primary/80 h-auto p-0 underline underline-offset-4 transition-colors duration-200"
-                        disabled={isLoading}
-                      >
-                        Privacy Policy
-                      </Button>
-                    </FormLabel>
-                    <FormMessage className="text-sm transition-colors duration-200" />
+                render={({ field, fieldState }) => (
+                  <FormItem className="space-y-2">
+                    <div className="flex flex-row items-start space-x-3 space-y-0 py-2">
+                      <FormControl>
+                        <Checkbox
+                          disabled={isLoading}
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className={cn(
+                            "h-5 w-5 rounded border-2 transition-colors duration-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary mt-0.5",
+                            fieldState.error
+                              ? "border-red-500 dark:border-red-400"
+                              : "border-input"
+                          )}
+                        />
+                      </FormControl>
+                      <FormLabel className={cn(
+                        "text-base font-normal transition-colors duration-200 cursor-pointer leading-relaxed",
+                        fieldState.error ? "text-red-700 dark:text-red-300" : "text-foreground"
+                      )}>
+                        I agree to the{' '}
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="px-0 text-base font-normal text-primary hover:text-primary/80 h-auto p-0 underline underline-offset-4 transition-colors duration-200"
+                          disabled={isLoading}
+                        >
+                          Terms of Service
+                        </Button>
+                        {' '}and{' '}
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="px-0 text-base font-normal text-primary hover:text-primary/80 h-auto p-0 underline underline-offset-4 transition-colors duration-200"
+                          disabled={isLoading}
+                        >
+                          Privacy Policy
+                        </Button>
+                      </FormLabel>
+                    </div>
+                    {fieldState.error && (
+                      <EnhancedFormMessage error={fieldState.error.message} />
+                    )}
                   </FormItem>
                 )}
               />
             </FormFieldTransition>
 
             {error && (
-              <div className="bg-destructive/10 border-2 border-destructive/20 rounded-2xl p-4 transition-colors duration-200">
-                <p className="text-base text-destructive font-medium transition-colors duration-200">{error}</p>
+              <div className="flex items-start gap-3 p-4 rounded-2xl bg-red-50 dark:bg-red-950/20 border-2 border-red-200 dark:border-red-800/30 transition-all duration-200">
+                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-base text-red-700 dark:text-red-300 font-medium leading-relaxed">
+                    Registration Failed
+                  </p>
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1 leading-relaxed">
+                    {error}
+                  </p>
+                </div>
               </div>
             )}
 
