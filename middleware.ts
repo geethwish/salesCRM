@@ -54,14 +54,30 @@ const securityHeaders = {
 };
 
 /**
- * CORS headers for API routes
+ * Compute CORS headers dynamically to support credentialed requests.
+ * Allows only same-origin by default and reflects the Origin header.
  */
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "Content-Type, Authorization, X-Requested-With",
-  "Access-Control-Max-Age": "86400",
+const getCorsHeaders = (request: NextRequest) => {
+  const origin = request.headers.get("origin");
+  const selfOrigin = request.nextUrl.origin;
+
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers":
+      "Content-Type, Authorization, X-Requested-With",
+    "Access-Control-Max-Age": "86400",
+  };
+
+  if (origin && origin === selfOrigin) {
+    headers["Access-Control-Allow-Origin"] = origin;
+    headers["Access-Control-Allow-Credentials"] = "true";
+    headers["Vary"] = "Origin";
+  } else {
+    // Fallback for non-CORS or same-origin fetch without Origin header
+    headers["Access-Control-Allow-Origin"] = selfOrigin;
+  }
+
+  return headers;
 };
 
 export function middleware(request: NextRequest) {
@@ -86,7 +102,9 @@ export function middleware(request: NextRequest) {
 
   // Add CORS headers for API routes
   if (request.nextUrl.pathname.startsWith("/api/")) {
-    Object.entries(corsHeaders).forEach(([key, value]) => {
+    const cors = getCorsHeaders(request);
+
+    Object.entries(cors).forEach(([key, value]) => {
       response.headers.set(key, value);
     });
 
@@ -95,7 +113,7 @@ export function middleware(request: NextRequest) {
       return new NextResponse(null, {
         status: 200,
         headers: {
-          ...corsHeaders,
+          ...cors,
           ...securityHeaders,
         },
       });
