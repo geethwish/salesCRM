@@ -9,7 +9,8 @@ import { HTTP_STATUS, ERROR_MESSAGES } from "@/lib/constants";
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Headers":
+    "Content-Type, Authorization, X-Requested-With",
   "Access-Control-Max-Age": "86400",
 };
 
@@ -201,8 +202,8 @@ export const securityHeaders = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Content-Security-Policy": [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // Allow inline scripts for React hydration
-    "style-src 'self' 'unsafe-inline'", // Allow inline styles
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com", // Allow inline scripts and Swagger UI
+    "style-src 'self' 'unsafe-inline' https://unpkg.com", // Allow inline styles and Swagger UI styles
     "img-src 'self' data: https:", // Allow images from self, data URLs, and HTTPS
     "font-src 'self' data:", // Allow fonts from self and data URLs
     "connect-src 'self' https:", // Allow connections to self and HTTPS endpoints

@@ -21,8 +21,8 @@ const securityHeaders = {
   // Comprehensive Content Security Policy
   "Content-Security-Policy": [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live", // Allow Vercel analytics
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://unpkg.com", // Allow Vercel analytics and Swagger UI
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com", // Allow Google Fonts and Swagger UI styles
     "font-src 'self' https://fonts.gstatic.com data:",
     "img-src 'self' data: https: blob:",
     "connect-src 'self' https: wss: https://vercel.live", // Allow API calls and WebSocket
@@ -57,10 +57,7 @@ const securityHeaders = {
  * CORS headers for API routes
  */
 const corsHeaders = {
-  "Access-Control-Allow-Origin":
-    process.env.NODE_ENV === "production"
-      ? process.env.NEXT_PUBLIC_API_URL || "https://sales-crm-iota.vercel.app"
-      : "*",
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Requested-With",
@@ -70,10 +67,21 @@ const corsHeaders = {
 export function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
-  // Add security headers to all responses
-  Object.entries(securityHeaders).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
+  // Special handling for Swagger UI documentation page
+  if (request.nextUrl.pathname === "/api/docs") {
+    // Don't apply strict CSP to docs page - it handles its own CSP
+    const docsSecurityHeaders = { ...securityHeaders };
+    delete docsSecurityHeaders["Content-Security-Policy"];
+
+    Object.entries(docsSecurityHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+  } else {
+    // Add security headers to all other responses
+    Object.entries(securityHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+  }
 
   // Add CORS headers for API routes
   if (request.nextUrl.pathname.startsWith("/api/")) {
