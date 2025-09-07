@@ -7,10 +7,11 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { authToasts } from "@/lib/components/ui/Toast";
+import { getApiBaseUrl } from "@/lib/utils/apiConfig";
 
 // Create axios instance with default configuration
 const httpClient: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "",
+  baseURL: getApiBaseUrl(),
   timeout: 10000, // 10 seconds timeout
   headers: {
     "Content-Type": "application/json",

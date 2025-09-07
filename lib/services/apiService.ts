@@ -9,6 +9,7 @@ import {
 import { toast } from "@/lib/components/ui/Toast";
 import { store } from "@/lib/store";
 import { selectToken } from "@/lib/store/slices/authSlice";
+import { getApiBaseUrl } from "@/lib/utils/apiConfig";
 
 // Extend Axios types to include custom metadata
 declare module "axios" {
@@ -20,7 +21,7 @@ declare module "axios" {
 }
 
 // API configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const API_BASE_URL = getApiBaseUrl();
 
 // Create axios instance with default configuration
 const apiClient: AxiosInstance = axios.create({
