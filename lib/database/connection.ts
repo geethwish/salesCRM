@@ -37,18 +37,18 @@ function getDBName(): string {
   return process.env.MONGODB_DB_NAME || "sales-crm";
 }
 
-// Connection options for production-ready setup
+// Connection options optimized for serverless environment
 const connectionOptions: mongoose.ConnectOptions = {
-  // Connection pool settings
-  maxPoolSize: 10,
-  minPoolSize: 2,
+  // Serverless-optimized connection pool settings
+  maxPoolSize: process.env.NODE_ENV === "production" ? 5 : 10,
+  minPoolSize: 1,
   maxIdleTimeMS: 30000,
   serverSelectionTimeoutMS: CONNECTION_TIMEOUT_MS,
-  socketTimeoutMS: 45000,
+  socketTimeoutMS: 30000, // Reduced for serverless
   connectTimeoutMS: CONNECTION_TIMEOUT_MS,
   retryWrites: true,
   retryReads: true,
-  bufferCommands: false, // Disable mongoose buffering
+  bufferCommands: false, // Disable mongoose buffering for serverless
   autoIndex: process.env.NODE_ENV !== "production", // Build indexes in development only
   autoCreate: true, // Automatically create collections
 };

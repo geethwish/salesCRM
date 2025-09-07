@@ -61,7 +61,11 @@ export function validateContentType(request: NextRequest): boolean {
   const method = request.method;
   if (method === "POST" || method === "PUT" || method === "PATCH") {
     const contentType = request.headers.get("content-type");
-    return contentType?.includes("application/json") || false;
+    // More flexible content-type validation
+    if (!contentType) {
+      return true; // Allow requests without content-type
+    }
+    return contentType.toLowerCase().includes("application/json");
   }
   return true;
 }

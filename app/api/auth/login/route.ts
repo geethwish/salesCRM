@@ -74,6 +74,8 @@ import {
  */
 async function loginHandler(request: NextRequest): Promise<NextResponse> {
   try {
+    console.log("🔐 Login attempt started");
+
     // Validate request body
     const validationResult = await validateRequestBody(
       request,
@@ -91,9 +93,12 @@ async function loginHandler(request: NextRequest): Promise<NextResponse> {
     }
 
     const loginData = validationResult.data;
+    console.log("✅ Request validation successful");
 
     // Authenticate user
+    console.log("🔍 Attempting user authentication");
     const user = await userService.loginUser(loginData);
+    console.log("✅ User authentication successful");
 
     // Generate JWT token
     const token = generateToken(user, loginData.rememberMe);
