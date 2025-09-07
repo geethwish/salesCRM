@@ -30,7 +30,6 @@ export async function GET(request: NextRequest) {
         mongodb_uri_set: !!process.env.MONGODB_URI,
         mongodb_db_name_set: !!process.env.MONGODB_DB_NAME,
         jwt_secret_set: !!process.env.JWT_SECRET,
-        next_public_api_url: process.env.NEXT_PUBLIC_API_URL,
       },
     };
 

@@ -21,7 +21,6 @@ env:
   MONGODB_URI: mongodb://localhost:27017/sales-crm-test
   MONGODB_DB_NAME: sales-crm-test
   JWT_SECRET: test-jwt-secret-for-github-actions
-  NEXT_PUBLIC_API_URL: http://localhost:3000
 
 # Define jobs to run
 jobs:
@@ -93,7 +92,6 @@ jobs:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           MONGODB_DB_NAME: ${{ secrets.MONGODB_DB_NAME }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
 
       # Step 9: Cache build artifacts
       - name: Cache build artifacts
@@ -145,7 +143,6 @@ jobs:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           MONGODB_DB_NAME: ${{ secrets.MONGODB_DB_NAME }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
 
       # Step 7: Deploy to Vercel
       - name: Deploy Project Artifacts to Vercel
@@ -206,7 +203,6 @@ jobs:
           MONGODB_URI: ${{ secrets.MONGODB_URI_PREVIEW || secrets.MONGODB_URI }}
           MONGODB_DB_NAME: ${{ secrets.MONGODB_DB_NAME_PREVIEW || secrets.MONGODB_DB_NAME }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL_PREVIEW || secrets.NEXT_PUBLIC_API_URL }}
 
       # Step 7: Deploy preview to Vercel
       - name: Deploy Preview to Vercel
