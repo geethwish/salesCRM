@@ -41,9 +41,17 @@ apiClient.interceptors.request.use(
     // Add auth token if available (from Redux store or localStorage fallback)
     let token = selectToken(store.getState());
 
-    // Fallback to localStorage for backward compatibility
+    // Fallback to localStorage for backward compatibility with extension protection
     if (!token && typeof window !== "undefined") {
-      token = localStorage.getItem("auth-token");
+      try {
+        token = localStorage.getItem("auth-token");
+      } catch {
+        // Handle extension interference with localStorage
+        console.warn(
+          "localStorage access failed, possibly due to extension interference"
+        );
+        token = null;
+      }
     }
 
     if (token) {

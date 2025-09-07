@@ -192,14 +192,25 @@ export function validateRequestSize(
 }
 
 /**
- * Security headers
+ * Security headers with enhanced CSP for extension compatibility
  */
 export const securityHeaders = {
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
   "X-XSS-Protection": "1; mode=block",
   "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Content-Security-Policy": "default-src 'self'",
+  "Content-Security-Policy": [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // Allow inline scripts for React hydration
+    "style-src 'self' 'unsafe-inline'", // Allow inline styles
+    "img-src 'self' data: https:", // Allow images from self, data URLs, and HTTPS
+    "font-src 'self' data:", // Allow fonts from self and data URLs
+    "connect-src 'self' https:", // Allow connections to self and HTTPS endpoints
+    "frame-ancestors 'none'", // Prevent framing (same as X-Frame-Options: DENY)
+    "base-uri 'self'", // Restrict base URI
+    "form-action 'self'", // Restrict form submissions
+    "upgrade-insecure-requests", // Upgrade HTTP to HTTPS
+  ].join("; "),
 };
 
 /**
