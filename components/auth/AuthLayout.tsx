@@ -92,7 +92,7 @@ export function AuthLayout({
       {/* Enhanced footer with better dark mode styling */}
       <div className="mt-12 text-center">
         <p className="text-sm text-muted-foreground transition-colors duration-200">
-          © 2024 Sales CRM. All rights reserved.
+          © 2025 Sales CRM. All rights reserved.
         </p>
       </div>
     </div>
