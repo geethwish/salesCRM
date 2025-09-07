@@ -1,30 +1,20 @@
 import swaggerJsdoc from "swagger-jsdoc";
-import { getApiBaseUrl } from "@/lib/utils/apiConfig";
 
 // Get the appropriate server URLs based on environment
 const getServerUrls = (): Array<{ url: string; description: string }> => {
-  const baseUrl = getApiBaseUrl();
   const servers: Array<{ url: string; description: string }> = [];
 
   // Always include the current environment's URL
   if (process.env.NODE_ENV === "production") {
     servers.push({
-      url: baseUrl,
+      url: "https://sales-crm-iota.vercel.app/",
       description: "Production server",
     });
   } else {
     servers.push({
-      url: baseUrl,
+      url: "http://localhost:3000",
       description: "Development server",
     });
-
-    // Also include localhost for development
-    if (baseUrl !== "http://localhost:3000") {
-      servers.push({
-        url: "http://localhost:3000",
-        description: "Local development server",
-      });
-    }
   }
 
   return servers;
