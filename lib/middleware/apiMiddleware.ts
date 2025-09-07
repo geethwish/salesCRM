@@ -4,21 +4,41 @@ import { ApiResponse } from "@/lib/types/order";
 import { HTTP_STATUS, ERROR_MESSAGES } from "@/lib/constants";
 
 /**
- * CORS headers for API responses
+ * Compute CORS headers dynamically to support credentialed requests.
+ * Allows only same-origin by default and reflects the Origin header.
  */
-export const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "Content-Type, Authorization, X-Requested-With",
-  "Access-Control-Max-Age": "86400",
+export const getCorsHeaders = (request: NextRequest) => {
+  const origin = request.headers.get("origin");
+  const selfOrigin = request.nextUrl.origin;
+
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers":
+      "Content-Type, Authorization, X-Requested-With",
+    "Access-Control-Max-Age": "86400",
+  };
+
+  if (origin && origin === selfOrigin) {
+    headers["Access-Control-Allow-Origin"] = origin;
+    headers["Access-Control-Allow-Credentials"] = "true";
+    headers["Vary"] = "Origin";
+  } else {
+    // Fallback for non-CORS or same-origin fetch without Origin header
+    headers["Access-Control-Allow-Origin"] = selfOrigin;
+  }
+
+  return headers;
 };
 
 /**
  * Add CORS headers to response
  */
-export function withCors(response: NextResponse): NextResponse {
-  Object.entries(corsHeaders).forEach(([key, value]) => {
+export function withCors(
+  request: NextRequest,
+  response: NextResponse
+): NextResponse {
+  const cors = getCorsHeaders(request);
+  Object.entries(cors).forEach(([key, value]) => {
     response.headers.set(key, value);
   });
   return response;
@@ -27,10 +47,11 @@ export function withCors(response: NextResponse): NextResponse {
 /**
  * Handle OPTIONS requests for CORS preflight
  */
-export function handleOptions(): NextResponse {
+export function handleOptions(request: NextRequest): NextResponse {
+  const cors = getCorsHeaders(request);
   return new NextResponse(null, {
     status: 200,
-    headers: corsHeaders,
+    headers: cors,
   });
 }
 
@@ -236,7 +257,7 @@ export function withApiMiddleware(
     try {
       // Handle OPTIONS requests
       if (request.method === "OPTIONS") {
-        return handleOptions();
+        return handleOptions(request);
       }
 
       // Validate content type
@@ -280,7 +301,7 @@ export function withApiMiddleware(
       const response = await handler(request, context);
 
       // Add middleware headers
-      const enhancedResponse = withCors(withSecurityHeaders(response));
+      const enhancedResponse = withCors(request, withSecurityHeaders(response));
       addRateLimitHeaders(
         enhancedResponse,
         rateLimit.remaining,
@@ -306,7 +327,7 @@ export function withApiMiddleware(
         { status: HTTP_STATUS.INTERNAL_SERVER_ERROR }
       );
 
-      return withCors(withSecurityHeaders(errorResponse));
+      return withCors(request, withSecurityHeaders(errorResponse));
     }
   };
 }

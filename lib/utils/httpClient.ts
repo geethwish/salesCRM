@@ -10,7 +10,7 @@ import { authToasts } from "@/lib/components/ui/Toast";
 
 // Create axios instance with default configuration
 const httpClient: AxiosInstance = axios.create({
-  timeout: 10000, // 10 seconds timeout
+  timeout: 30000, // 30 seconds to align with Vercel function maxDuration
   headers: {
     "Content-Type": "application/json",
   },

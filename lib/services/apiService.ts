@@ -54,15 +54,13 @@ apiClient.interceptors.request.use(
     }
 
     // Log request in development
-    if (process.env.NODE_ENV === "development") {
-      console.log(
-        `🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`,
-        {
-          params: config.params,
-          data: config.data,
-        }
-      );
-    }
+    console.log(
+      `🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`,
+      {
+        params: config.params,
+        data: config.data,
+      }
+    );
 
     return config;
   },
