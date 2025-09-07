@@ -70,8 +70,9 @@ export function middleware(request: NextRequest) {
   // Special handling for Swagger UI documentation page
   if (request.nextUrl.pathname === "/api/docs") {
     // Don't apply strict CSP to docs page - it handles its own CSP
-    const docsSecurityHeaders = { ...securityHeaders };
-    delete docsSecurityHeaders["Content-Security-Policy"];
+    const { "Content-Security-Policy": _, ...docsSecurityHeaders } =
+      securityHeaders;
+    void _; // Explicitly mark as intentionally unused
 
     Object.entries(docsSecurityHeaders).forEach(([key, value]) => {
       response.headers.set(key, value);
