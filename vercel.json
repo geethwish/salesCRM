@@ -1,12 +1,6 @@
 {
   "version": 2,
   "name": "sales-crm",
-  "builds": [
-    {
-      "src": "next.config.ts",
-      "use": "@vercel/next"
-    }
-  ],
   "env": {
     "MONGODB_URI": "@mongodb_uri",
     "MONGODB_DB_NAME": "@mongodb_db_name",
