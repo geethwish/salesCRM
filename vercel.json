@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "sales-crm",
   "env": {
     "MONGODB_URI": "@mongodb_uri",
     "MONGODB_DB_NAME": "@mongodb_db_name",
@@ -49,7 +48,7 @@
   "crons": [
     {
       "path": "/api/health",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 12 * * *"
     }
   ]
 }
