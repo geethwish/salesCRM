@@ -303,5 +303,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 For support and questions:
 
 - Check the [installation guide](./docs/installation.md)
-- Review [technical documentation](./docs/documentation.md)
-- Open an issue on GitHub
+- Check the [technical documentation](./docs/documentation.md)

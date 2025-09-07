@@ -228,5 +228,3 @@ Set the following in your Vercel Project Settings → Environment Variables:
 
 - App:https://sales-crm-iota.vercel.app/
 - API docs (Swagger UI):https://sales-crm-iota.vercel.app//api/docs
-- OpenAPI JSON:https://sales-crm-iota.vercel.app//api/docs/openapi.json
-- Health check:https://sales-crm-iota.vercel.app//api/health
